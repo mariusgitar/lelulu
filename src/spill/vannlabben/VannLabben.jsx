@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import Sky from "../../felles/Sky.jsx";
-import { playAudio } from "../../felles/speak.js";
+import { playAudio, stoppLyd } from "../../felles/speak.js";
 import { TING, OPPGAVER } from "./ting.js";
 import "../../felles/sky.css";
 import "./VannLabben.css";
@@ -80,6 +80,8 @@ export default function VannLabben({ onBack }) {
 
     if (iVann && !spillerLyd) {
       setSpillerLyd(true);
+      // Stopp eventuell lyd som allerede spiller før ny starter
+      stoppLyd();
       const alleredeAv = ting.filter((x) => status[x.id]?.startsWith("i-vann") && x.type === t.type).length;
       const sone = alleredeAv, bw = 100 / 3;
       setPos((prev) => ({ ...prev, [aktivId]: {
