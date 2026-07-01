@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import Sky from "../../felles/Sky.jsx";
-import { playAudio, speak, unlockAudio } from "../../felles/speak.js";
+import { playAudio, unlockAudio } from "../../felles/speak.js";
 import { DYR, STEDER } from "./data.js";
 import "../../felles/sky.css";
 import "./SorterDyrene.css";
@@ -41,9 +41,11 @@ export default function SorterDyrene({ onBack }) {
   const handleDrop = async (stedId) => {
     if (!aktivtDyr) return;
     if (aktivtDyr.sted === stedId) {
-      // Bug 4 fix: si dyrets navn spesifikt
-      const stednavn = STEDER.find((s) => s.id === stedId).navn.toLowerCase();
-      speak(`Ja! ${aktivtDyr.navn} bor i ${stednavn}et!`);
+      // Bruker forhåndsgenerert fil med riktig dyrenavn og sted
+      await playAudio(
+        `/lyd/sorter/${aktivtDyr.id}_${stedId}.mp3`,
+        `Ja! ${aktivtDyr.navn} bor i ${STEDER.find(s => s.id === stedId).navn.toLowerCase()}et!`
+      );
       fullfor(aktivtDyr.id, stedId);
       setTimeout(() => setAktivIndex((i) => i + 1), 700);
     } else {
