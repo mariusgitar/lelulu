@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import Sky from "../../felles/Sky.jsx";
-import { playAudio, stoppLyd, unlockAudio } from "../../felles/speak.js";
+import { speak, playAudio, stoppLyd, unlockAudio } from "../../felles/speak.js";
 import { DYR } from "./data.js";
 import "../../felles/sky.css";
 import "./Silhuett.css";
@@ -42,8 +42,9 @@ export default function Silhuett({ onBack }) {
     setValgt(dyr.id);
     if (dyr.id === runde.fasit.id) {
       setFeedback("riktig");
-      await playAudio(`/lyd/dyr/${runde.fasit.slug || runde.fasit.id}_sporsmal.mp3`,
-        `Ja! Det er en ${runde.fasit.navn}!`);
+      // Bug 1 fix: bruk respons_riktig + dyrnavnet, IKKE dyrespørsmål-filen
+      await playAudio("/lyd/fraser/respons_riktig_1.mp3", "Riktig!");
+      speak(`Det er en ${runde.fasit.navn}!`);
       setTimeout(() => {
         setStjerner((s) => s + 1);
         if (rundeIndex + 1 < RUNDER) {
@@ -58,7 +59,7 @@ export default function Silhuett({ onBack }) {
       }, 1900);
     } else {
       setFeedback("feil");
-      await playAudio("/lyd/fraser/respons_naer.mp3", "Nesten! Se godt på formen.");
+      playAudio("/lyd/fraser/respons_naer.mp3", "Nesten! Se godt på formen.");
       setTimeout(() => { setFeedback(null); setValgt(null); }, 1100);
     }
   };
