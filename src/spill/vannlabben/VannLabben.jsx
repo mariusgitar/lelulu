@@ -25,6 +25,19 @@ export default function VannLabben({ onBack }) {
   const dragOffset = useRef({ dx: 0, dy: 0 });
   const elRefs     = useRef({});
   const introRef   = useRef(-1);
+  const bassengRef = useRef(null);
+
+  const erOverBasseng = (clientX, clientY) => {
+    if (!bassengRef.current) return false;
+    const rect = bassengRef.current.getBoundingClientRect();
+    // Utvidet fangst-sone: 80px over toppen, 30px på sidene
+    return (
+      clientX >= rect.left - 30 &&
+      clientX <= rect.right + 30 &&
+      clientY >= rect.top - 80 &&
+      clientY <= rect.bottom + 20
+    );
+  };
 
   const oppgave = OPPGAVER[oppgaveIdx];
   const riktige = ting.filter((t) => t.type === oppgave && status[t.id]?.startsWith("i-vann")).length;
@@ -54,15 +67,13 @@ export default function VannLabben({ onBack }) {
 
   const onMove = (e) => {
     setPekerPos({ x: e.clientX, y: e.clientY });
-    const el = document.elementFromPoint(e.clientX, e.clientY);
-    setOverVann(!!(el?.closest?.("[data-vann]")));
+    setOverVann(erOverBasseng(e.clientX, e.clientY));
   };
 
   const onUp = (e) => {
     if (!aktivId) return;
     const t = ting.find((x) => x.id === aktivId);
-    const el = document.elementFromPoint(e.clientX, e.clientY);
-    const iVann = !!(el?.closest?.("[data-vann]"));
+    const iVann = erOverBasseng(e.clientX, e.clientY);
 
     if (iVann) {
       const alleredeAv = ting.filter((x) => status[x.id]?.startsWith("i-vann") && x.type === t.type).length;
@@ -165,7 +176,7 @@ export default function VannLabben({ onBack }) {
       </p>
       <div className="vl-fremdrift">{riktige} / {total} funnet</div>
 
-      <div className={"vl-basseng" + (overVann ? " basseng-klar" : "")} data-vann="true">
+      <div ref={bassengRef} className={"vl-basseng" + (overVann ? " basseng-klar" : "")} data-vann="true">
         <div className="vl-overflate" />
         {ting.map((t) => {
           if (!status[t.id]?.startsWith("i-vann")) return null;
