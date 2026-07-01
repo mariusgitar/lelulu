@@ -1,0 +1,75 @@
+.sil-scene {
+  position: relative; min-height: 100dvh; width: 100%;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 28px 18px 40px; overflow: hidden;
+  background: linear-gradient(180deg, #aee3f5 0%, #d7f0e0 55%, #eaf8ec 100%);
+  color: #2d4a3e;
+}
+.sil-tilbake {
+  position: fixed; top: 14px; left: 14px; z-index: 10; border: none;
+  background: rgba(255,255,255,0.85); padding: 10px 16px; border-radius: 20px;
+  font-weight: 800; font-size: 0.9rem; color: #1f5c4a; cursor: pointer;
+  box-shadow: 0 4px 0 rgba(0,0,0,0.08);
+}
+.sil-stjerner {
+  position: relative; z-index: 1; font-size: 1.4rem;
+  margin: 52px 0 8px; letter-spacing: 4px;
+}
+.sil-sporsmal {
+  position: relative; z-index: 1; font-weight: 800; font-size: 1.15rem;
+  color: #1f5c4a; margin: 0 0 18px;
+}
+.sil-boks {
+  position: relative; z-index: 1; width: 160px; height: 160px;
+  border-radius: 30px; border: 4px dashed;
+  background: rgba(255,255,255,0.6);
+  display: flex; align-items: center; justify-content: center; margin-bottom: 26px;
+}
+.sil-emoji {
+  font-size: 5rem;
+  transition: filter 0.5s ease, opacity 0.5s ease;
+}
+.sil-emoji.avslort { animation: sil-reveal 0.5s ease; }
+@keyframes sil-reveal {
+  0%   { transform: scale(0.9); }
+  60%  { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+.sil-alternativer {
+  position: relative; z-index: 1;
+  display: flex; gap: 16px; flex-wrap: wrap; justify-content: center;
+}
+.sil-kort {
+  width: 112px; height: 122px; border-radius: 24px; border: 3px solid;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  cursor: pointer; font-family: 'Nunito', sans-serif; transition: transform 0.15s ease;
+}
+.sil-kort:not(:disabled):active { transform: translateY(3px); }
+.sil-dyr-emoji { font-size: 2.4rem; }
+.sil-dyr-navn  { font-weight: 800; color: #2d4a3e; }
+.kort-riktig { animation: sil-bounce 0.5s ease; }
+@keyframes sil-bounce { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
+.kort-feil   { animation: sil-shake 0.4s ease; opacity: 0.6; }
+@keyframes sil-shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+.sil-feedback {
+  position: relative; z-index: 1; margin-top: 22px;
+  padding: 12px 22px; border-radius: 20px; font-weight: 800;
+}
+.sil-feedback.riktig { background: #d9f2d9; color: #2c7a2c; }
+.sil-feedback.feil   { background: #fde2e2; color: #b03a3a; }
+.sil-ferdig {
+  position: relative; z-index: 1; margin-top: 80px; background: white;
+  border-radius: 28px; padding: 32px 28px; text-align: center;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1); max-width: 300px;
+}
+.sil-ferdig-emoji { font-size: 3rem; margin-bottom: 8px; }
+.sil-ferdig h2    { color: #1f5c4a; margin: 0 0 6px; }
+.sil-ferdig p     { font-size: 1.4rem; margin: 0 0 18px; }
+.sil-btn {
+  border: none; background: #f0c14b; color: #5c4319; font-weight: 900;
+  padding: 14px 26px; border-radius: 20px; font-family: 'Nunito', sans-serif;
+  font-size: 1rem; cursor: pointer; box-shadow: 0 5px 0 #d6a834;
+  display: block; width: 100%; margin-bottom: 8px;
+}
+.sil-btn:active  { transform: translateY(4px); box-shadow: 0 1px 0 #d6a834; }
+.sil-btn-sek     { background: rgba(0,0,0,0.06); color: #2d4a3e; box-shadow: 0 5px 0 rgba(0,0,0,0.08); }

@@ -1,0 +1,106 @@
+.dino-scene {
+  position: relative; min-height: 100dvh; width: 100%;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 28px 18px 40px; overflow: hidden;
+  background: linear-gradient(180deg, #c8e8f0 0%, #e8f8d0 55%, #f0f8e8 100%);
+  color: #2d4a3e;
+}
+.dino-tilbake {
+  position: fixed; top: 14px; left: 14px; z-index: 10; border: none;
+  background: rgba(255,255,255,0.85); padding: 10px 16px; border-radius: 20px;
+  font-weight: 800; font-size: 0.9rem; color: #1f5c4a; cursor: pointer;
+  box-shadow: 0 4px 0 rgba(0,0,0,0.08);
+}
+
+/* ── Start ── */
+.dino-start { position: relative; z-index: 1; text-align: center; max-width: 340px; margin-top: 60px; }
+.dino-start-emojier { font-size: 3.5rem; margin-bottom: 10px; animation: bob 2.5s ease-in-out infinite; }
+@keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+.dino-tittel  { font-size: 2.2rem; font-weight: 900; color: #1f5c4a; margin: 0 0 10px; }
+.dino-ingress { font-weight: 700; color: #3a6b5a; margin: 0 0 24px; line-height: 1.5; }
+
+/* ── Fremdrift ── */
+.dino-fremdrift {
+  position: relative; z-index: 1; display: flex; gap: 8px;
+  margin: 52px 0 16px; font-size: 1.4rem;
+}
+.dino-dot    { transition: all 0.3s ease; }
+.dino-dot-ok { animation: dino-pop 0.4s ease; }
+@keyframes dino-pop { 0%{transform:scale(0.6)} 60%{transform:scale(1.2)} 100%{transform:scale(1)} }
+
+/* ── Bæsj-boks ── */
+.dino-baesj-boks {
+  position: relative; z-index: 1; background: rgba(255,255,255,0.85);
+  border-radius: 24px; padding: 18px 22px; text-align: center;
+  max-width: 320px; width: 100%; margin-bottom: 20px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+}
+.dino-baesj-label      { font-weight: 800; color: #1f5c4a; margin: 0 0 6px; font-size: 0.9rem; }
+.dino-baesj-emoji      { font-size: 2.6rem; margin: 4px 0; letter-spacing: 4px; }
+.dino-baesj-beskrivelse { font-weight: 700; color: #3a6b5a; font-size: 0.9rem; margin: 6px 0 10px; line-height: 1.4; }
+.dino-lyd-knapp {
+  border: none; background: white; width: 38px; height: 38px; border-radius: 50%;
+  font-size: 1rem; cursor: pointer; box-shadow: 0 3px 0 rgba(0,0,0,0.08);
+}
+
+/* ── Alternativer ── */
+.dino-alternativer {
+  position: relative; z-index: 1;
+  display: flex; gap: 14px; flex-wrap: wrap; justify-content: center;
+}
+.dino-kort {
+  width: 118px; min-height: 130px; border-radius: 24px; border: 3px solid;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 8px; cursor: pointer; font-family: 'Nunito', sans-serif;
+  transition: transform 0.15s ease; padding: 10px 6px;
+  box-shadow: 0 5px 0 rgba(0,0,0,0.07);
+}
+.dino-kort:not(:disabled):active { transform: translateY(3px); }
+.dino-img-liten   { width: 68px; height: 68px; object-fit: contain; }
+.dino-emoji-liten { font-size: 3rem; }
+.dino-kort-navn   { font-weight: 800; color: #2d4a3e; font-size: 0.85rem; text-align: center; }
+
+.kort-riktig { animation: dino-bounce 0.5s ease; }
+@keyframes dino-bounce { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
+.kort-feil   { animation: dino-shake 0.4s ease; opacity: 0.6; }
+@keyframes dino-shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+
+/* ── Fakta ── */
+.dino-fakta-boks {
+  position: relative; z-index: 1; margin-top: 18px; background: white;
+  border-radius: 22px; padding: 18px 20px; max-width: 320px; width: 100%;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  display: flex; flex-direction: column; gap: 8px;
+  animation: dino-inn 0.3s ease;
+}
+@keyframes dino-inn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+.dino-fakta-boks p  { font-weight: 700; color: #2d4a3e; margin: 0; line-height: 1.4; font-size: 0.9rem; }
+.dino-fakta2        { color: #3a6b5a !important; }
+
+.dino-feedback {
+  position: relative; z-index: 1; margin-top: 16px;
+  padding: 12px 22px; border-radius: 20px; font-weight: 800;
+}
+.dino-feedback.feil { background: #fde2e2; color: #b03a3a; }
+
+/* ── Ferdig ── */
+.dino-ferdig {
+  position: relative; z-index: 1; margin-top: 80px; background: white;
+  border-radius: 28px; padding: 32px 28px; text-align: center;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1); max-width: 300px;
+}
+.dino-ferdig-emoji  { font-size: 3rem; margin-bottom: 8px; }
+.dino-ferdig h2     { color: #1f5c4a; margin: 0 0 6px; }
+.dino-poeng-tekst   { font-weight: 700; color: #3a6b5a; margin: 0 0 18px; }
+.dino-img-stor      { width: 100px; height: 100px; object-fit: contain; }
+.dino-emoji-stor    { font-size: 5rem; }
+
+/* ── Knapper ── */
+.dino-btn {
+  border: none; background: #f0c14b; color: #5c4319; font-weight: 900;
+  padding: 14px 26px; border-radius: 20px; font-family: 'Nunito', sans-serif;
+  font-size: 1rem; cursor: pointer; box-shadow: 0 5px 0 #d6a834;
+  display: block; width: 100%; margin-bottom: 8px; margin-top: 4px;
+}
+.dino-btn:active  { transform: translateY(4px); box-shadow: 0 1px 0 #d6a834; }
+.dino-btn-sek     { background: rgba(0,0,0,0.06); color: #2d4a3e; box-shadow: 0 5px 0 rgba(0,0,0,0.08); }
