@@ -28,8 +28,20 @@ function SpillKort({ spill, onOpen }) {
   const [trykket, setTrykket] = useState(false);
   const [partikler, setPartikler] = useState([]);
   const idRef = useRef(0);
+  const startPosRef = useRef(null);
 
-  const handleTrykk = () => {
+  const handlePointerDown = (e) => {
+    startPosRef.current = { x: e.clientX, y: e.clientY };
+  };
+
+  const handlePointerUp = (e) => {
+    if (!startPosRef.current) return;
+    const dx = Math.abs(e.clientX - startPosRef.current.x);
+    const dy = Math.abs(e.clientY - startPosRef.current.y);
+    startPosRef.current = null;
+    // Ignorer hvis fingeren beveget seg mer enn 10px — det er en scroll
+    if (dx > 10 || dy > 10) return;
+
     setTrykket(true);
     const nye = spill.burst.map((emoji, i) => ({
       id: idRef.current++, emoji,
@@ -44,7 +56,8 @@ function SpillKort({ spill, onOpen }) {
     <button
       className={"spill-kort" + (trykket ? " kort-trykket" : "")}
       style={{ background: spill.bg, borderColor: spill.border, "--skygge": spill.shadow }}
-      onPointerDown={handleTrykk}
+      onPointerDown={handlePointerDown}
+      onPointerUp={handlePointerUp}
       aria-label={spill.label}
     >
       {partikler.map((p) => (
