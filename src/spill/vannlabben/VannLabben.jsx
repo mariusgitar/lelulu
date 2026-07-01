@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import Sky from "../../felles/Sky.jsx";
-import { speak, playAudio } from "../../felles/speak.js";
+import { playAudio } from "../../felles/speak.js";
 import { TING, OPPGAVER } from "./ting.js";
 import "../../felles/sky.css";
 import "./VannLabben.css";
@@ -9,31 +9,33 @@ function lagStartStatus(ting) {
   return Object.fromEntries(ting.map((t) => [t.id, "venter"]));
 }
 
-// Lokale fallback-tekster for fraser
 const FRASER = {
-  vl_finn_flyter: "Dra alle tingene som flyter, opp i bassenget!",
-  vl_finn_synker: "Nå: dra alle tingene som synker, ned i bassenget!",
+  vl_finn_flyter:   "Dra alle tingene som flyter, opp i bassenget!",
+  vl_finn_synker:   "Nå: dra alle tingene som synker, ned i bassenget!",
   vl_riktig_flyter: "Riktig, den flyter!",
   vl_riktig_synker: "Riktig, den synker!",
-  vl_feil_flyter: "Se, den flyter faktisk! Men vi leter etter de som synker.",
-  vl_feil_synker: "Se, den synker faktisk! Men vi leter etter de som flyter.",
-  vl_runde_neste: "Bra jobbet! Nå tester vi noe nytt.",
-  vl_ferdig: "Du har testet alt! Du er en ekte vann-forsker!",
+  vl_feil_flyter:   "Se, den flyter faktisk! Men vi leter etter de som synker.",
+  vl_feil_synker:   "Se, den synker faktisk! Men vi leter etter de som flyter.",
+  vl_runde_neste:   "Bra jobbet! Nå tester vi noe nytt.",
+  vl_ferdig:        "Du har testet alt! Du er en ekte vann-forsker!",
 };
+
+// Bug 2 fix: await alltid, aldri la to kall overlappe
 const p = (navn) => playAudio(`/lyd/fraser/${navn}.mp3`, FRASER[navn] || "");
 
 export default function VannLabben({ onBack }) {
   const ting = useMemo(() => [...TING].sort(() => Math.random() - 0.5), []);
-  const [oppgaveIdx, setOppgaveIdx]     = useState(0);
-  const [status, setStatus]             = useState(() => lagStartStatus(ting));
-  const [pos, setPos]                   = useState({});
-  const [aktivId, setAktivId]           = useState(null);
-  const [pekerPos, setPekerPos]         = useState({ x: 0, y: 0 });
-  const [overVann, setOverVann]         = useState(false);
-  const [forklaring, setForklaring]     = useState(null);
-  const [heltFerdig, setHeltFerdig]     = useState(false);
-  const [rundeOverlay, setRundeOverlay] = useState(false);
+  const [oppgaveIdx, setOppgaveIdx]       = useState(0);
+  const [status, setStatus]               = useState(() => lagStartStatus(ting));
+  const [pos, setPos]                     = useState({});
+  const [aktivId, setAktivId]             = useState(null);
+  const [pekerPos, setPekerPos]           = useState({ x: 0, y: 0 });
+  const [overVann, setOverVann]           = useState(false);
+  const [forklaring, setForklaring]       = useState(null);
+  const [heltFerdig, setHeltFerdig]       = useState(false);
+  const [rundeOverlay, setRundeOverlay]   = useState(false);
   const [bassengTommes, setBassengTommes] = useState(false);
+  const [spillerLyd, setSpillerLyd]       = useState(false); // Bug 2: låser slik at to kall ikke overlapper
 
   const dragOffset = useRef({ dx: 0, dy: 0 });
   const elRefs     = useRef({});
@@ -71,11 +73,13 @@ export default function VannLabben({ onBack }) {
     setOverVann(erOverBasseng(e.clientX, e.clientY));
   };
 
-  const onUp = (e) => {
+  const onUp = async (e) => {
     if (!aktivId) return;
     const t = ting.find((x) => x.id === aktivId);
     const iVann = erOverBasseng(e.clientX, e.clientY);
-    if (iVann) {
+
+    if (iVann && !spillerLyd) {
+      setSpillerLyd(true);
       const alleredeAv = ting.filter((x) => status[x.id]?.startsWith("i-vann") && x.type === t.type).length;
       const sone = alleredeAv, bw = 100 / 3;
       setPos((prev) => ({ ...prev, [aktivId]: {
@@ -84,10 +88,11 @@ export default function VannLabben({ onBack }) {
       }}));
       setStatus((s) => ({ ...s, [aktivId]: t.type === "flyter" ? "i-vann-flyter" : "i-vann-synker" }));
       setForklaring(t);
-      p(t.type === oppgave
+      await p(t.type === oppgave
         ? (t.type === "flyter" ? "vl_riktig_flyter" : "vl_riktig_synker")
         : (t.type === "flyter" ? "vl_feil_flyter" : "vl_feil_synker")
       );
+      setSpillerLyd(false);
     }
     setAktivId(null);
     setOverVann(false);
@@ -104,7 +109,7 @@ export default function VannLabben({ onBack }) {
       window.removeEventListener("pointercancel", onUp);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [aktivId]);
+  }, [aktivId, spillerLyd]);
 
   useEffect(() => {
     if (riktige > 0 && riktige === total && !rundeOverlay && !heltFerdig) {
@@ -125,8 +130,7 @@ export default function VannLabben({ onBack }) {
   };
 
   if (heltFerdig) return (
-    <div className="vl-scene">
-      <Sky />
+    <div className="vl-scene"><Sky />
       <div className="vl-ferdig">
         <div className="vl-ferdig-emoji">🔬💧</div>
         <h2>Vann-forsker ferdig!</h2>
@@ -138,8 +142,7 @@ export default function VannLabben({ onBack }) {
   );
 
   return (
-    <div className="vl-scene">
-      <Sky />
+    <div className="vl-scene"><Sky />
       <button className="vl-tilbake" onClick={onBack}>← Hjem</button>
       <div className="vl-oppgave-merker">
         {OPPGAVER.map((o, i) => (
