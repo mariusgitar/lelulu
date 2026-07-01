@@ -1,15 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import Sky from "../../felles/Sky.jsx";
-import { speak, stoppLyd } from "../../felles/speak.js";
+import { speak, playAudio, stoppLyd, unlockAudio } from "../../felles/speak.js";
 import { DYR } from "./data.js";
 import "../../felles/sky.css";
 import "./Dyreminne.css";
 
 function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
-
-function spillLyd(tekst) {
-  return new Promise((resolve) => speak(tekst, resolve));
-}
 
 export default function Dyreminne({ onBack }) {
   const [sekvens, setSekvens]         = useState([]);
@@ -27,6 +23,7 @@ export default function Dyreminne({ onBack }) {
   }, []);
 
   const startSpill = async () => {
+    await unlockAudio();
     stopRef.current = false;
     setSekvens([]);
     setInputListe([]);
@@ -52,7 +49,7 @@ export default function Dyreminne({ onBack }) {
     for (const dyr of seq) {
       if (stopRef.current) return;
       setAktivLys(dyr.id);
-      await spillLyd(dyr.lyd);
+      await playAudio(dyr.src, dyr.lyd);
       await sleep(150);
       setAktivLys(null);
       await sleep(250);
@@ -63,7 +60,7 @@ export default function Dyreminne({ onBack }) {
   const trykkDyr = async (dyr) => {
     if (status !== "venter") return;
     setAktivLys(dyr.id);
-    speak(dyr.lyd);
+    playAudio(dyr.src, dyr.lyd);
     setTimeout(() => setAktivLys(null), 300);
 
     const ny     = [...inputListe, dyr.id];
