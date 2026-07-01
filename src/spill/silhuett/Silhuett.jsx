@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import Sky from "../../felles/Sky.jsx";
-import { speak, playAudio, stoppLyd, unlockAudio } from "../../felles/speak.js";
+import { playAudio, stoppLyd, unlockAudio } from "../../felles/speak.js";
 import { DYR } from "./data.js";
 import "../../felles/sky.css";
 import "./Silhuett.css";
@@ -42,9 +42,11 @@ export default function Silhuett({ onBack }) {
     setValgt(dyr.id);
     if (dyr.id === runde.fasit.id) {
       setFeedback("riktig");
-      // Bug 1 fix: bruk respons_riktig + dyrnavnet, IKKE dyrespørsmål-filen
-      await playAudio("/lyd/fraser/respons_riktig_1.mp3", "Riktig!");
-      speak(`Det er en ${runde.fasit.navn}!`);
+      // Bruker forhåndsgenerert fil med riktig dyrenavn — ingen Web Speech
+      await playAudio(
+        `/lyd/silhuett/${runde.fasit.id}.mp3`,
+        `Riktig! Det er en ${runde.fasit.navn.toLowerCase()}!`
+      );
       setTimeout(() => {
         setStjerner((s) => s + 1);
         if (rundeIndex + 1 < RUNDER) {
