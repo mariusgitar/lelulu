@@ -66,8 +66,17 @@ export default function Dinodetektiven({ onBack }) {
     if (dino.id === runde.fasit.id) {
       setFeedback("riktig");
       setPoeng((p) => p + 1);
-      speak(`Riktig! Det er ${runde.fasit.navn}! ${runde.fasit.fakta}`);
       setVisFakta(true);
+      // Les opp begge fakta etter hverandre
+      speak(`Riktig! Det er ${runde.fasit.navn}!`, () => {
+        setTimeout(() => {
+          speak(runde.fasit.fakta, () => {
+            setTimeout(() => {
+              speak(runde.fasit.fakta2);
+            }, 300);
+          });
+        }, 200);
+      });
     } else {
       setFeedback("feil");
       speak("Hmm, prøv en annen!");
