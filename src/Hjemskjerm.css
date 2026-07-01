@@ -1,4 +1,20 @@
-.hjemskjerm {
+.sol-knapp {
+  position: fixed; top: 16px; right: 16px; z-index: 10;
+  width: 52px; height: 52px; border-radius: 50%; border: none;
+  background: radial-gradient(circle, #fff6c9 0%, #ffe27a 70%, #ffd95e 100%);
+  font-size: 1.6rem; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: transform 0.15s ease;
+}
+.sol-knapp:active { transform: scale(0.88); }
+
+.sol-teller {
+  position: absolute; top: -4px; right: -4px;
+  background: #1f5c4a; color: white; border-radius: 99px;
+  font-size: 0.6rem; font-weight: 800; padding: 2px 5px;
+  font-family: 'Nunito', sans-serif; line-height: 1;
+}
+
+
   position: relative;
   min-height: 100dvh;
   width: 100%;
