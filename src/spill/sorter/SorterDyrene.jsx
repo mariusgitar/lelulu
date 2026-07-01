@@ -1,11 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import Sky from "../../felles/Sky.jsx";
-import { playAudio, unlockAudio } from "../../felles/speak.js";
+import { playAudio, speak, unlockAudio } from "../../felles/speak.js";
 import { DYR, STEDER } from "./data.js";
 import "../../felles/sky.css";
 import "./SorterDyrene.css";
-
-const p = (src, fallback) => playAudio(`/lyd/fraser/${src}.mp3`, fallback);
 
 export default function SorterDyrene({ onBack }) {
   const [rekkefolge]    = useState(() => [...DYR].sort(() => Math.random() - 0.5));
@@ -23,7 +21,7 @@ export default function SorterDyrene({ onBack }) {
   useEffect(() => {
     setTimeout(async () => {
       await unlockAudio();
-      p("sort_start", "Dra dyret dit det bor!");
+      playAudio("/lyd/fraser/sort_start.mp3", "Dra dyret dit det bor!");
     }, 500);
   }, []);
 
@@ -31,24 +29,26 @@ export default function SorterDyrene({ onBack }) {
     setPlassert((prev) => {
       const neste = { ...prev, [dyrId]: stedId };
       if (Object.keys(neste).length === DYR.length) {
-        setTimeout(() => { setFerdig(true); p("sort_ferdig", "Bra jobbet! Alle dyrene har funnet hjemmet sitt!"); }, 600);
+        setTimeout(() => {
+          setFerdig(true);
+          playAudio("/lyd/fraser/sort_ferdig.mp3", "Bra jobbet! Alle dyrene har funnet hjemmet sitt!");
+        }, 600);
       }
       return neste;
     });
   };
 
-  const handleDrop = (stedId) => {
+  const handleDrop = async (stedId) => {
     if (!aktivtDyr) return;
-    const stednavn = STEDER.find((s) => s.id === stedId).navn.toLowerCase();
     if (aktivtDyr.sted === stedId) {
-      const fraser = { vann: "sort_vann", land: "sort_land", luft: "sort_luft" };
-      const fallback = { vann: `Ja! ${aktivtDyr.navn} bor i vannet!`, land: `Ja! ${aktivtDyr.navn} bor på land!`, luft: `Ja! ${aktivtDyr.navn} bor i lufta!` };
-      p(fraser[stedId], fallback[stedId]);
+      // Bug 4 fix: si dyrets navn spesifikt
+      const stednavn = STEDER.find((s) => s.id === stedId).navn.toLowerCase();
+      speak(`Ja! ${aktivtDyr.navn} bor i ${stednavn}et!`);
       fullfor(aktivtDyr.id, stedId);
       setTimeout(() => setAktivIndex((i) => i + 1), 700);
     } else {
       setRisting(stedId);
-      p("sort_feil", "Hmm, prøv et annet sted!");
+      playAudio("/lyd/fraser/sort_feil.mp3", "Hmm, prøv et annet sted!");
       setTimeout(() => setRisting(null), 450);
     }
     setDragOverSted(null);
@@ -64,8 +64,7 @@ export default function SorterDyrene({ onBack }) {
   const onMove = (e) => {
     setPekerPos({ x: e.clientX, y: e.clientY });
     const el = document.elementFromPoint(e.clientX, e.clientY);
-    const sted = el?.closest?.("[data-sted]");
-    setDragOverSted(sted ? sted.getAttribute("data-sted") : null);
+    setDragOverSted(el?.closest?.("[data-sted]")?.getAttribute("data-sted") || null);
   };
 
   const onUp = (e) => {
@@ -90,8 +89,7 @@ export default function SorterDyrene({ onBack }) {
   }, [holdes]);
 
   if (ferdig) return (
-    <div className="sort-scene">
-      <Sky />
+    <div className="sort-scene"><Sky />
       <button className="sort-tilbake" onClick={onBack}>← Hjem</button>
       <div className="sort-ferdig">
         <div className="sort-ferdig-emoji">🏡✨</div>
@@ -103,23 +101,21 @@ export default function SorterDyrene({ onBack }) {
   );
 
   return (
-    <div className="sort-scene">
-      <Sky />
+    <div className="sort-scene"><Sky />
       <button className="sort-tilbake" onClick={onBack}>← Hjem</button>
       <p className="sort-instruks">Dra dyret dit det bor!</p>
       <div className="sort-steder">
-        {STEDER.map((sted) => {
-          const dyrHer = DYR.filter((d) => plassert[d.id] === sted.id);
-          return (
-            <div key={sted.id} data-sted={sted.id}
-              className={"sort-sted" + (dragOverSted === sted.id ? " sted-over" : "") + (risting === sted.id ? " sted-rist" : "")}
-              style={{ background: sted.farge, borderColor: sted.kant }}>
-              <span className="sort-sted-emoji">{sted.emoji}</span>
-              <span className="sort-sted-navn">{sted.navn}</span>
-              <div className="sort-sted-dyr">{dyrHer.map((d) => <span key={d.id}>{d.emoji}</span>)}</div>
+        {STEDER.map((sted) => (
+          <div key={sted.id} data-sted={sted.id}
+            className={"sort-sted" + (dragOverSted === sted.id ? " sted-over" : "") + (risting === sted.id ? " sted-rist" : "")}
+            style={{ background: sted.farge, borderColor: sted.kant }}>
+            <span className="sort-sted-emoji">{sted.emoji}</span>
+            <span className="sort-sted-navn">{sted.navn}</span>
+            <div className="sort-sted-dyr">
+              {DYR.filter((d) => plassert[d.id] === sted.id).map((d) => <span key={d.id}>{d.emoji}</span>)}
             </div>
-          );
-        })}
+          </div>
+        ))}
       </div>
       <div className="sort-dra-omrade">
         {aktivtDyr && (
