@@ -45,14 +45,14 @@ export default function Dyreminne({ onBack }) {
 
   const spillSekvens = async (seq) => {
     setStatus("spiller");
-    await sleep(500);
+    await sleep(800);
     for (const dyr of seq) {
       if (stopRef.current) return;
       setAktivLys(dyr.id);
       await playAudio(dyr.src, dyr.lyd);
-      await sleep(150);
+      await sleep(300);
       setAktivLys(null);
-      await sleep(250);
+      await sleep(600);
     }
     if (!stopRef.current) setStatus("venter");
   };
@@ -78,9 +78,9 @@ export default function Dyreminne({ onBack }) {
 
     if (ny.length === sekvensRef.current.length) {
       setStatus("riktig");
-      await sleep(600);
+      await sleep(1000);
       speak("Bra husket! Neste runde!");
-      await sleep(900);
+      await sleep(1800);
       if (!stopRef.current) leggTilOgSpill(sekvensRef.current);
     }
   };
