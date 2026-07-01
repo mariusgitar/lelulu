@@ -12,6 +12,28 @@
  */
 
 let aktivAudio = null;
+let audioUnlocked = false;
+
+// Spiller et usynlig stille klipp for å låse opp autoplay-policy.
+// Må kalles direkte fra en bruker-event (click/pointerdown).
+export async function unlockAudio() {
+  if (audioUnlocked) return;
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    await ctx.resume();
+    audioUnlocked = true;
+  } catch {
+    // Prøv med vanlig Audio som fallback
+    try {
+      const a = new Audio();
+      a.src = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAA" +
+        "EAAQARAAIAIgACABAAIABkYXRhAAAAAA==";
+      await a.play();
+      a.pause();
+      audioUnlocked = true;
+    } catch { /* ignorerer */ }
+  }
+}
 
 function getBestVoice() {
   if (!("speechSynthesis" in window)) return null;
