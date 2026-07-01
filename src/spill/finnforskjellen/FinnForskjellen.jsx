@@ -1,14 +1,12 @@
 import { useState, useMemo, useEffect } from "react";
 import Sky from "../../felles/Sky.jsx";
-import { speak, stoppLyd } from "../../felles/speak.js";
+import { playAudio, stoppLyd, unlockAudio } from "../../felles/speak.js";
 import { SCENER } from "./data.js";
 import "../../felles/sky.css";
 import "./FinnForskjellen.css";
 
 function lagSceneB(scene) {
-  return scene.objekter.map((o) =>
-    o.id === scene.forskjell ? { ...o, emoji: scene.endring.til } : o
-  );
+  return scene.objekter.map((o) => o.id === scene.forskjell ? { ...o, emoji: scene.endring.til } : o);
 }
 
 function Bilde({ objekter, onTrykk, funnetId, sideLabel, bakgrunn }) {
@@ -17,13 +15,10 @@ function Bilde({ objekter, onTrykk, funnetId, sideLabel, bakgrunn }) {
       <div className="ff-merke">{sideLabel}</div>
       <div className="ff-bilde" style={{ background: bakgrunn }}>
         {objekter.map((o) => (
-          <button
-            key={o.id}
+          <button key={o.id}
             className={"ff-obj" + (funnetId === o.id ? " ff-funnet" : "")}
             style={{ left: `${o.x}%`, top: `${o.y}%` }}
-            onClick={() => onTrykk(o.id)}
-            aria-label="Trykk her"
-          >
+            onClick={() => onTrykk(o.id)} aria-label="Trykk her">
             {o.emoji}
           </button>
         ))}
@@ -33,10 +28,7 @@ function Bilde({ objekter, onTrykk, funnetId, sideLabel, bakgrunn }) {
 }
 
 export default function FinnForskjellen({ onBack }) {
-  const sceneRekkefolge = useMemo(
-    () => [...SCENER].sort(() => Math.random() - 0.5),
-    []
-  );
+  const sceneRekkefolge = useMemo(() => [...SCENER].sort(() => Math.random() - 0.5), []);
   const [sceneIdx, setSceneIdx] = useState(0);
   const [funnet, setFunnet]     = useState(false);
   const [stjerner, setStjerner] = useState(0);
@@ -46,7 +38,11 @@ export default function FinnForskjellen({ onBack }) {
   const sceneB = useMemo(() => lagSceneB(scene), [scene]);
 
   useEffect(() => {
-    setTimeout(() => speak("Kan du finne forskjellen?"), 400);
+    const init = async () => {
+      await unlockAudio();
+      playAudio("/lyd/fraser/ff_sporsmal.mp3", "Kan du finne forskjellen?");
+    };
+    init();
     return () => stoppLyd();
   }, [sceneIdx]);
 
@@ -54,9 +50,9 @@ export default function FinnForskjellen({ onBack }) {
     if (funnet) return;
     if (id === scene.forskjell) {
       setFunnet(true);
-      speak(`Du fant den! ${scene.endring.fra} ble til ${scene.endring.til}!`);
+      playAudio("/lyd/fraser/respons_riktig_1.mp3", "Du fant den!");
     } else {
-      speak("Ikke der, se videre!");
+      playAudio("/lyd/fraser/respons_feil.mp3", "Ikke der, se videre!");
     }
   };
 
@@ -67,13 +63,12 @@ export default function FinnForskjellen({ onBack }) {
       setFunnet(false);
     } else {
       setFerdig(true);
-      speak("Du fant alle forskjellene! Du er en ekte detektiv!");
+      playAudio("/lyd/fraser/ff_ferdig.mp3", "Du fant alle forskjellene! Du er en ekte detektiv!");
     }
   };
 
   if (ferdig) return (
-    <div className="ff-scene">
-      <Sky />
+    <div className="ff-scene"><Sky />
       <button className="ff-tilbake" onClick={onBack}>← Hjem</button>
       <div className="ff-ferdig">
         <div className="ff-ferdig-emoji">🔍✨</div>
@@ -86,35 +81,16 @@ export default function FinnForskjellen({ onBack }) {
   );
 
   return (
-    <div className="ff-scene">
-      <Sky />
+    <div className="ff-scene"><Sky />
       <button className="ff-tilbake" onClick={onBack}>← Hjem</button>
-
       <div className="ff-stjerner">
         {"⭐".repeat(stjerner)}{"☆".repeat(sceneRekkefolge.length - stjerner)}
       </div>
-
-      <p className="ff-instruks">
-        {funnet ? "Du fant den! 🎉" : "Finn det som er forskjellig!"}
-      </p>
-
+      <p className="ff-instruks">{funnet ? "Du fant den! 🎉" : "Finn det som er forskjellig!"}</p>
       <div className="ff-bilder">
-        <Bilde
-          objekter={scene.objekter}
-          onTrykk={trykk}
-          funnetId={null}
-          sideLabel="A"
-          bakgrunn={scene.bakgrunn}
-        />
-        <Bilde
-          objekter={sceneB}
-          onTrykk={trykk}
-          funnetId={funnet ? scene.forskjell : null}
-          sideLabel="B"
-          bakgrunn={scene.bakgrunn}
-        />
+        <Bilde objekter={scene.objekter} onTrykk={trykk} funnetId={null} sideLabel="A" bakgrunn={scene.bakgrunn} />
+        <Bilde objekter={sceneB} onTrykk={trykk} funnetId={funnet ? scene.forskjell : null} sideLabel="B" bakgrunn={scene.bakgrunn} />
       </div>
-
       {funnet && (
         <div className="ff-resultat">
           <span>{scene.endring.fra} → {scene.endring.til}</span>

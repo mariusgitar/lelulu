@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import Sky from "../../felles/Sky.jsx";
-import { speak } from "../../felles/speak.js";
+import { playAudio, unlockAudio } from "../../felles/speak.js";
 import { DYR, STEDER } from "./data.js";
 import "../../felles/sky.css";
 import "./SorterDyrene.css";
+
+const p = (src, fallback) => playAudio(`/lyd/fraser/${src}.mp3`, fallback);
 
 export default function SorterDyrene({ onBack }) {
   const [rekkefolge]    = useState(() => [...DYR].sort(() => Math.random() - 0.5));
@@ -14,20 +16,22 @@ export default function SorterDyrene({ onBack }) {
   const [ferdig, setFerdig]         = useState(false);
   const [holdes, setHoldes]         = useState(false);
   const [pekerPos, setPekerPos]     = useState({ x: 0, y: 0 });
-
   const dragOffset = useRef({ dx: 0, dy: 0 });
   const dyrRef     = useRef(null);
   const aktivtDyr  = rekkefolge[aktivIndex];
 
   useEffect(() => {
-    setTimeout(() => speak("Dra dyret dit det bor!"), 500);
+    setTimeout(async () => {
+      await unlockAudio();
+      p("sort_start", "Dra dyret dit det bor!");
+    }, 500);
   }, []);
 
   const fullfor = (dyrId, stedId) => {
-    setPlassert((p) => {
-      const neste = { ...p, [dyrId]: stedId };
+    setPlassert((prev) => {
+      const neste = { ...prev, [dyrId]: stedId };
       if (Object.keys(neste).length === DYR.length) {
-        setTimeout(() => { setFerdig(true); speak("Bra jobbet! Alle dyrene har funnet hjemmet sitt!"); }, 600);
+        setTimeout(() => { setFerdig(true); p("sort_ferdig", "Bra jobbet! Alle dyrene har funnet hjemmet sitt!"); }, 600);
       }
       return neste;
     });
@@ -35,14 +39,16 @@ export default function SorterDyrene({ onBack }) {
 
   const handleDrop = (stedId) => {
     if (!aktivtDyr) return;
+    const stednavn = STEDER.find((s) => s.id === stedId).navn.toLowerCase();
     if (aktivtDyr.sted === stedId) {
-      const stednavn = STEDER.find((s) => s.id === stedId).navn.toLowerCase();
-      speak(`Ja! ${aktivtDyr.navn} bor i ${stednavn}et!`);
+      const fraser = { vann: "sort_vann", land: "sort_land", luft: "sort_luft" };
+      const fallback = { vann: `Ja! ${aktivtDyr.navn} bor i vannet!`, land: `Ja! ${aktivtDyr.navn} bor på land!`, luft: `Ja! ${aktivtDyr.navn} bor i lufta!` };
+      p(fraser[stedId], fallback[stedId]);
       fullfor(aktivtDyr.id, stedId);
       setTimeout(() => setAktivIndex((i) => i + 1), 700);
     } else {
       setRisting(stedId);
-      speak("Hmm, prøv et annet sted!");
+      p("sort_feil", "Hmm, prøv et annet sted!");
       setTimeout(() => setRisting(null), 450);
     }
     setDragOverSted(null);
@@ -50,10 +56,7 @@ export default function SorterDyrene({ onBack }) {
 
   const onPointerDown = (e) => {
     const rect = dyrRef.current.getBoundingClientRect();
-    dragOffset.current = {
-      dx: e.clientX - (rect.left + rect.width / 2),
-      dy: e.clientY - (rect.top + rect.height / 2),
-    };
+    dragOffset.current = { dx: e.clientX - (rect.left + rect.width / 2), dy: e.clientY - (rect.top + rect.height / 2) };
     setPekerPos({ x: e.clientX, y: e.clientY });
     setHoldes(true);
   };
@@ -76,11 +79,11 @@ export default function SorterDyrene({ onBack }) {
   useEffect(() => {
     if (!holdes) return;
     window.addEventListener("pointermove", onMove);
-    window.addEventListener("pointerup",   onUp);
+    window.addEventListener("pointerup", onUp);
     window.addEventListener("pointercancel", onUp);
     return () => {
       window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerup",   onUp);
+      window.removeEventListener("pointerup", onUp);
       window.removeEventListener("pointercancel", onUp);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -103,45 +106,27 @@ export default function SorterDyrene({ onBack }) {
     <div className="sort-scene">
       <Sky />
       <button className="sort-tilbake" onClick={onBack}>← Hjem</button>
-
       <p className="sort-instruks">Dra dyret dit det bor!</p>
-
       <div className="sort-steder">
         {STEDER.map((sted) => {
           const dyrHer = DYR.filter((d) => plassert[d.id] === sted.id);
-          const erOver = dragOverSted === sted.id;
-          const rister = risting === sted.id;
           return (
-            <div
-              key={sted.id}
-              data-sted={sted.id}
-              className={"sort-sted" + (erOver ? " sted-over" : "") + (rister ? " sted-rist" : "")}
-              style={{ background: sted.farge, borderColor: sted.kant }}
-            >
+            <div key={sted.id} data-sted={sted.id}
+              className={"sort-sted" + (dragOverSted === sted.id ? " sted-over" : "") + (risting === sted.id ? " sted-rist" : "")}
+              style={{ background: sted.farge, borderColor: sted.kant }}>
               <span className="sort-sted-emoji">{sted.emoji}</span>
               <span className="sort-sted-navn">{sted.navn}</span>
-              <div className="sort-sted-dyr">
-                {dyrHer.map((d) => <span key={d.id}>{d.emoji}</span>)}
-              </div>
+              <div className="sort-sted-dyr">{dyrHer.map((d) => <span key={d.id}>{d.emoji}</span>)}</div>
             </div>
           );
         })}
       </div>
-
       <div className="sort-dra-omrade">
         {aktivtDyr && (
-          <div
-            ref={dyrRef}
+          <div ref={dyrRef}
             className={"sort-drabart" + (holdes ? " sort-holdes" : "")}
             onPointerDown={onPointerDown}
-            style={holdes ? {
-              position: "fixed",
-              left: pekerPos.x - dragOffset.current.dx,
-              top:  pekerPos.y - dragOffset.current.dy,
-              transform: "translate(-50%, -50%) scale(1.15)",
-              zIndex: 50,
-            } : {}}
-          >
+            style={holdes ? { position: "fixed", left: pekerPos.x - dragOffset.current.dx, top: pekerPos.y - dragOffset.current.dy, transform: "translate(-50%,-50%) scale(1.15)", zIndex: 50 } : {}}>
             <span className="sort-dyr-emoji">{aktivtDyr.emoji}</span>
           </div>
         )}

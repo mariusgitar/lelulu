@@ -1,21 +1,6 @@
-/**
- * Spiller et forhåndsgenerert mp3-klipp.
- * Faller tilbake til Web Speech API dersom filen ikke finnes (404 / autoplay-feil).
- *
- * Bruk:
- *   import { playAudio, speak } from "../felles/speak.js";
- *   await playAudio("/lyd/fraser/velkomst.mp3", "Hei og velkommen!");
- *   speak("Hei!"); // Web Speech fallback direkte
- *
- * Når edge-tts-filer er generert brukes playAudio() i spillene.
- * Inntil da er speak() et greit alternativ for prototyping.
- */
-
 let aktivAudio = null;
 let audioUnlocked = false;
 
-// Spiller et usynlig stille klipp for å låse opp autoplay-policy.
-// Må kalles direkte fra en bruker-event (click/pointerdown).
 export async function unlockAudio() {
   if (audioUnlocked) return;
   try {
@@ -23,11 +8,9 @@ export async function unlockAudio() {
     await ctx.resume();
     audioUnlocked = true;
   } catch {
-    // Prøv med vanlig Audio som fallback
     try {
       const a = new Audio();
-      a.src = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAA" +
-        "EAAQARAAIAIgACABAAIABkYXRhAAAAAA==";
+      a.src = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
       await a.play();
       a.pause();
       audioUnlocked = true;
@@ -43,7 +26,7 @@ function getBestVoice() {
     return l.startsWith("nb") || l.startsWith("no") || l.includes("nor");
   });
   if (norske.length === 0) return voices[0] || null;
-  const pref = ["nora", "siri", "enhanced", "premium", "neural", "natural"];
+  const pref = ["nora", "siri", "finn", "enhanced", "premium", "neural", "natural"];
   return norske.find((v) => pref.some((p) => v.name.toLowerCase().includes(p))) || norske[0];
 }
 
@@ -56,7 +39,7 @@ export function speak(tekst, onEnd) {
     const voice = getBestVoice();
     if (voice) { u.voice = voice; u.lang = voice.lang || "nb-NO"; } else { u.lang = "nb-NO"; }
     u.rate = 0.82;
-    u.pitch = 1.06;
+    u.pitch = 1.0;
     u.onend = onEnd || null;
     u.onerror = onEnd || null;
     synth.speak(u);
@@ -89,4 +72,17 @@ export function playAudio(src, fallbackTekst) {
       resolve();
     });
   });
+}
+
+// Spiller en liste med {src, fallback} i sekvens med valgfri pause mellom
+export async function playSekvens(klipp, { pauseMs = 150, onStart, signal } = {}) {
+  for (let i = 0; i < klipp.length; i++) {
+    if (signal?.avbrutt) return;
+    onStart?.(i);
+    await playAudio(klipp[i].src, klipp[i].fallback);
+    if (signal?.avbrutt) return;
+    if (pauseMs && i < klipp.length - 1) {
+      await new Promise((r) => setTimeout(r, pauseMs));
+    }
+  }
 }
