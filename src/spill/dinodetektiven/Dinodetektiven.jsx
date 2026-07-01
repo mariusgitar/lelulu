@@ -31,7 +31,9 @@ export default function Dinodetektiven({ onBack }) {
   const [poeng, setPoeng]           = useState(0);
   const [ferdig, setFerdig]         = useState(false);
   const [visFakta, setVisFakta]     = useState(false);
+  const [nedtelling, setNedtelling] = useState(null);
   const introSpilt                  = useRef(false);
+  const autoRef                     = useRef(null);
 
   const runder = useMemo(() => {
     const shuffled = [...DINO].sort(() => Math.random() - 0.5).slice(0, RUNDER);
@@ -58,7 +60,22 @@ export default function Dinodetektiven({ onBack }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [runde, fase]);
 
-  useEffect(() => () => stoppLyd(), []);
+  useEffect(() => () => { stoppLyd(); clearInterval(autoRef.current); }, []);
+
+  const startNedtelling = (ekstraPoeng) => {
+    let t = 3;
+    setNedtelling(t);
+    autoRef.current = setInterval(() => {
+      t -= 1;
+      if (t <= 0) {
+        clearInterval(autoRef.current);
+        setNedtelling(null);
+        neste(ekstraPoeng);
+      } else {
+        setNedtelling(t);
+      }
+    }, 1000);
+  };
 
   const velg = (dino) => {
     if (feedback) return;
@@ -67,12 +84,13 @@ export default function Dinodetektiven({ onBack }) {
       setFeedback("riktig");
       setPoeng((p) => p + 1);
       setVisFakta(true);
-      // Les opp begge fakta etter hverandre
       speak(`Riktig! Det er ${runde.fasit.navn}!`, () => {
         setTimeout(() => {
           speak(runde.fasit.fakta, () => {
             setTimeout(() => {
-              speak(runde.fasit.fakta2);
+              speak(runde.fasit.fakta2, () => {
+                startNedtelling(1);
+              });
             }, 300);
           });
         }, 200);
@@ -84,7 +102,10 @@ export default function Dinodetektiven({ onBack }) {
     }
   };
 
-  const neste = () => {
+  const neste = (ekstraPoeng = 0) => {
+    clearInterval(autoRef.current);
+    setNedtelling(null);
+    stoppLyd();
     if (rundeIndex + 1 < RUNDER) {
       setRundeIndex((i) => i + 1);
       setFeedback(null);
@@ -92,8 +113,9 @@ export default function Dinodetektiven({ onBack }) {
       setVisFakta(false);
       introSpilt.current = false;
     } else {
+      const tot = poeng + ekstraPoeng;
       setFerdig(true);
-      speak(poeng >= RUNDER - 1 ? "Du er en ekte dino-ekspert!" : "Bra innsats! Spill igjen og lær mer om dinosaurene!");
+      speak(tot >= RUNDER - 1 ? "Du er en ekte dino-ekspert!" : "Bra innsats! Spill igjen og lær mer om dinosaurene!");
     }
   };
 
@@ -170,8 +192,10 @@ export default function Dinodetektiven({ onBack }) {
         <div className="dino-fakta-boks">
           <p>💡 {runde.fasit.fakta}</p>
           <p className="dino-fakta2">🦕 {runde.fasit.fakta2}</p>
-          <button className="dino-btn" onClick={neste}>
-            {rundeIndex + 1 < RUNDER ? "Neste dino!" : "Se resultatet!"}
+          <button className="dino-btn" onClick={() => neste(0)}>
+            {nedtelling !== null
+              ? `Neste dino... (${nedtelling})`
+              : rundeIndex + 1 < RUNDER ? "Neste dino!" : "Se resultatet!"}
           </button>
         </div>
       )}
