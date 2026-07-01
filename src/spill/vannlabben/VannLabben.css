@@ -1,0 +1,204 @@
+.vl-scene {
+  position: relative;
+  min-height: 100dvh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 22px 16px 24px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #aee3f5 0%, #d7f0e0 55%, #eaf8ec 100%);
+  color: #2d4a3e;
+  user-select: none;
+}
+
+.vl-tilbake {
+  position: fixed;
+  top: 14px;
+  left: 14px;
+  z-index: 10;
+  border: none;
+  background: rgba(255, 255, 255, 0.85);
+  padding: 10px 16px;
+  border-radius: 20px;
+  font-weight: 800;
+  font-size: 0.9rem;
+  color: #1f5c4a;
+  cursor: pointer;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.08);
+}
+
+.vl-oppgave-merker { position: relative; z-index: 1; display: flex; gap: 8px; margin: 34px 0 8px; }
+.vl-prikk         { font-size: 1rem; opacity: 0.35; transition: all 0.3s ease; filter: grayscale(1); }
+.vl-prikk.aktiv   { opacity: 1; filter: grayscale(0); transform: scale(1.3); }
+.vl-prikk.ferdig  { opacity: 0.9; filter: grayscale(0); }
+
+.vl-instruks   { position: relative; z-index: 1; font-weight: 800; font-size: 1.1rem; color: #1f5c4a; margin: 0 0 4px; text-align: center; }
+.vl-fremdrift  { position: relative; z-index: 1; font-weight: 800; color: #3a6b5a; background: rgba(255,255,255,0.7); padding: 4px 14px; border-radius: 14px; margin-bottom: 14px; font-size: 0.9rem; }
+
+/* ── Basseng ── */
+.vl-basseng {
+  position: relative;
+  z-index: 1;
+  width: min(320px, 80vw);
+  height: 200px;
+  border-radius: 26px;
+  border: 5px solid white;
+  background: linear-gradient(180deg, rgba(191,227,247,0.55) 0%, rgba(95,168,211,0.75) 100%);
+  box-shadow: 0 10px 26px rgba(0,0,0,0.1), inset 0 0 0 2px rgba(255,255,255,0.3);
+  overflow: hidden;
+  transition: box-shadow 0.2s ease;
+  backdrop-filter: blur(1px);
+}
+
+.basseng-klar { box-shadow: 0 10px 26px rgba(0,0,0,0.1), 0 0 0 5px rgba(240,193,75,0.55); }
+
+.vl-overflate {
+  position: absolute;
+  top: 0; left: -10%;
+  width: 120%; height: 12px;
+  background: rgba(255,255,255,0.5);
+  border-radius: 50%;
+  filter: blur(2px);
+}
+
+/* ── Objekter i vann ── */
+.vl-obj {
+  position: absolute;
+  font-size: 2.1rem;
+  transform: translate(-50%, -50%);
+}
+
+.obj-flyter { animation: settleIn 0.9s ease, bobb 3.4s ease-in-out 0.9s infinite; }
+.obj-synker { animation: synkFall 1.7s cubic-bezier(0.55, 0, 0.85, 0.35) forwards, synkLanding 0.45s ease 1.4s; }
+.tommes     { animation: tommUt 0.7s ease forwards !important; }
+
+@keyframes settleIn {
+  0%   { opacity: 0; transform: translate(-50%, -120%) scale(0.7); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes synkFall {
+  0%   { opacity: 0; top: 8%; transform: translate(-50%, -50%) scale(0.85) rotate(0deg); }
+  15%  { opacity: 1; }
+  100% { top: var(--bunn-y, 85%); transform: translate(-50%, -50%) scale(1) rotate(12deg); }
+}
+
+@keyframes synkLanding {
+  0%   { transform: translate(-50%, -50%) scale(1) rotate(12deg); }
+  40%  { transform: translate(-50%, -42%) scale(0.94, 1.08) rotate(10deg); }
+  100% { transform: translate(-50%, -50%) scale(1) rotate(12deg); }
+}
+
+@keyframes bobb {
+  0%, 100% { transform: translate(-50%, -50%) translateY(0); }
+  50%       { transform: translate(-50%, -50%) translateY(-6px); }
+}
+
+@keyframes tommUt {
+  to { opacity: 0; transform: translate(-50%, 200%) scale(0.6); }
+}
+
+/* ── Overlay ved runde ferdig ── */
+.vl-overlay {
+  position: absolute; inset: 0;
+  background: rgba(255,255,255,0.55);
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(2px);
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.vl-overlay-kort {
+  background: white;
+  border-radius: 22px;
+  padding: 18px 22px;
+  text-align: center;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.15);
+}
+
+.vl-overlay-kort p { font-weight: 900; color: #1f5c4a; margin: 0 0 12px; font-size: 1.05rem; }
+
+/* ── Forklaring ── */
+.vl-forklaring {
+  position: relative;
+  z-index: 1;
+  max-width: 280px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #3a6b5a;
+  margin: 10px 0 0;
+  background: rgba(255,255,255,0.75);
+  padding: 8px 14px;
+  border-radius: 14px;
+}
+
+/* ── Ting-rad ── */
+.vl-ting-rad {
+  position: relative;
+  z-index: 1;
+  margin-top: 18px;
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 360px;
+}
+
+.vl-ting {
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  background: white;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 6px 0 rgba(0,0,0,0.08), 0 8px 18px rgba(0,0,0,0.08);
+  cursor: grab;
+  touch-action: none;
+  transition: box-shadow 0.25s ease;
+}
+
+.vl-ting.holdes {
+  box-shadow: 0 18px 26px rgba(0,0,0,0.2), 0 0 0 5px rgba(255,255,255,0.6);
+  pointer-events: none;
+  cursor: grabbing;
+}
+
+.vl-ting-emoji { font-size: 2rem; pointer-events: none; }
+
+/* ── Knapper ── */
+.vl-btn {
+  border: none;
+  background: #f0c14b;
+  color: #5c4319;
+  font-weight: 900;
+  padding: 13px 24px;
+  border-radius: 20px;
+  font-size: 1rem;
+  cursor: pointer;
+  box-shadow: 0 5px 0 #d6a834;
+  margin-bottom: 8px;
+  display: block;
+  width: 100%;
+}
+
+.vl-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 #d6a834; }
+.vl-btn-liten  { width: auto; display: inline-block; padding: 10px 18px; font-size: 0.9rem; }
+.vl-btn-sekundar { background: rgba(0,0,0,0.06); color: #2d4a3e; box-shadow: 0 5px 0 rgba(0,0,0,0.08); }
+
+/* ── Ferdig ── */
+.vl-ferdig {
+  position: relative;
+  z-index: 1;
+  margin-top: 80px;
+  background: white;
+  border-radius: 28px;
+  padding: 32px 28px;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  max-width: 300px;
+}
+
+.vl-ferdig-emoji { font-size: 3rem; margin-bottom: 8px; }
+.vl-ferdig h2    { color: #1f5c4a; margin: 0 0 8px; }
+.vl-ferdig p     { font-weight: 700; color: #3a6b5a; margin: 0 0 18px; }

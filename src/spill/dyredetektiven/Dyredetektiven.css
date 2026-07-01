@@ -1,0 +1,110 @@
+.dd-scene {
+  min-height: 100dvh;
+  background: linear-gradient(160deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 20px;
+  color: white;
+}
+
+.dd-tilbake {
+  position: fixed;
+  top: 14px;
+  left: 14px;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-weight: 800;
+  font-size: 0.9rem;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+}
+
+/* ── Start ── */
+.dd-start  { text-align: center; max-width: 380px; }
+.dd-pote   { font-size: 96px; margin-bottom: 16px; }
+.dd-tittel { font-size: 36px; font-weight: 900; color: #ffd700; margin: 0 0 10px; }
+.dd-ingress { font-size: 18px; color: #ccc; margin: 0 0 40px; line-height: 1.5; }
+
+/* ── Quiz ── */
+.dd-gjett { text-align: center; max-width: 400px; width: 100%; }
+
+.dd-progress { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.dd-progress-bar  { flex: 1; background: rgba(255,255,255,0.1); border-radius: 99px; height: 6px; }
+.dd-progress-fill { background: #ffd700; border-radius: 99px; height: 100%; transition: width 0.4s ease; }
+.dd-poeng-label   { font-size: 14px; color: #ffd700; font-weight: 700; white-space: nowrap; }
+
+.dd-dyr-emoji { font-size: 100px; line-height: 1; margin: 20px 0 8px; }
+.dd-dyr-navn  { font-size: 32px; font-weight: 900; margin: 0 0 6px; }
+.dd-sporsmal  { font-size: 17px; color: #ccc; margin: 0 0 28px; }
+
+.dd-svar-liste { display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px; }
+.dd-svar-knapp {
+  border-radius: 20px;
+  padding: 22px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.2s ease;
+  border: none;
+}
+.dd-svar-tall   { font-size: 42px; font-weight: 900; line-height: 1; }
+.dd-svar-enhet  { font-size: 20px; color: #aaa; font-weight: 500; }
+
+/* ── Fakta + badge ── */
+.dd-fakta    { animation: fadeUp 0.35s ease; }
+.dd-badge    { border-radius: 16px; padding: 14px 20px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.dd-badge-emoji { font-size: 24px; }
+.dd-badge-tekst { font-size: 20px; font-weight: 800; }
+.dd-faktaboks   { font-size: 15px; color: #ccc; font-style: italic; margin: 12px 0 16px; line-height: 1.5; }
+
+.dd-stopp {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.18);
+  color: #888;
+  border-radius: 12px;
+  padding: 11px 20px;
+  font-size: 14px;
+  cursor: pointer;
+  width: 100%;
+  margin-top: 4px;
+}
+
+/* ── Ferdig ── */
+.dd-ferdig    { text-align: center; max-width: 380px; }
+.dd-trophy    { font-size: 90px; margin-bottom: 8px; }
+.dd-poeng-boks { margin: 20px 0; background: rgba(255,255,255,0.06); border-radius: 20px; padding: 24px; }
+.dd-poeng-stor { font-size: 72px; font-weight: 900; color: #ffd700; line-height: 1; }
+.dd-poeng-sub  { font-size: 18px; color: #aaa; }
+.dd-sluttekst  { font-size: 17px; color: #ccc; margin: 0 0 28px; line-height: 1.6; }
+
+/* ── Knapper ── */
+.dd-btn {
+  background: #ffd700;
+  color: #1a1a2e;
+  border: none;
+  border-radius: 20px;
+  padding: 20px 32px;
+  font-size: 20px;
+  font-weight: 800;
+  cursor: pointer;
+  display: block;
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.dd-btn-sekundar {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
