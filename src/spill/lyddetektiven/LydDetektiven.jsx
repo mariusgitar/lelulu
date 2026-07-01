@@ -1,15 +1,11 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import Sky from "../../felles/Sky.jsx";
-import { speak, stoppLyd } from "../../felles/speak.js";
+import { speak, playAudio, stoppLyd, unlockAudio } from "../../felles/speak.js";
 import { DYR } from "./data.js";
 import "../../felles/sky.css";
 import "./LydDetektiven.css";
 
 const RUNDER = 5;
-
-function spillLyd(tekst) {
-  return new Promise((resolve) => speak(tekst, resolve));
-}
 
 export default function LydDetektiven({ onBack }) {
   const [rundeIndex, setRundeIndex] = useState(0);
@@ -34,8 +30,9 @@ export default function LydDetektiven({ onBack }) {
 
   const lesLyd = async () => {
     if (!runde || spillerLyd) return;
+    await unlockAudio();
     setSpillerLyd(true);
-    await spillLyd(runde.fasit.lyd);
+    await playAudio(runde.fasit.src, runde.fasit.lyd);
     setSpillerLyd(false);
   };
 
