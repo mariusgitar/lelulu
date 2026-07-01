@@ -55,7 +55,7 @@ export function speak(tekst, onEnd) {
     const u = new SpeechSynthesisUtterance(tekst);
     const voice = getBestVoice();
     if (voice) { u.voice = voice; u.lang = voice.lang || "nb-NO"; } else { u.lang = "nb-NO"; }
-    u.rate = 0.88;
+    u.rate = 0.82;
     u.pitch = 1.06;
     u.onend = onEnd || null;
     u.onerror = onEnd || null;
