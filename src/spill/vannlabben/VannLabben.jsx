@@ -47,12 +47,13 @@ export default function VannLabben({ onBack }) {
   const [heltFerdig, setHeltFerdig]       = useState(false);
   const [rundeOverlay, setRundeOverlay]   = useState(false);
   const [bassengTommes, setBassengTommes] = useState(false);
-  const [spillerLyd, setSpillerLyd]       = useState(false); // Bug 2: låser slik at to kall ikke overlapper
 
   const dragOffset = useRef({ dx: 0, dy: 0 });
   const elRefs     = useRef({});
   const introRef   = useRef(-1);
   const bassengRef = useRef(null);
+  const oppgaveRef = useRef(oppgaveIdx);
+  useEffect(() => { oppgaveRef.current = oppgaveIdx; }, [oppgaveIdx]);
 
   const erOverBasseng = (clientX, clientY) => {
     if (!bassengRef.current) return false;
@@ -72,45 +73,51 @@ export default function VannLabben({ onBack }) {
     }
   }, [oppgaveIdx, oppgave]);
 
+  const aktivIdRef = useRef(null);
+
   const onDown = (id) => (e) => {
     if (status[id] !== "venter") return;
     const r = elRefs.current[id].getBoundingClientRect();
     dragOffset.current = { dx: e.clientX - (r.left + r.width / 2), dy: e.clientY - (r.top + r.height / 2) };
     setPekerPos({ x: e.clientX, y: e.clientY });
+    aktivIdRef.current = id;
     setAktivId(id);
   };
 
   const onMove = (e) => {
+    if (!aktivIdRef.current) return;
     setPekerPos({ x: e.clientX, y: e.clientY });
     setOverVann(erOverBasseng(e.clientX, e.clientY));
   };
 
-  const onUp = async (e) => {
-    if (!aktivId) return;
-    const t = ting.find((x) => x.id === aktivId);
+  const onUp = (e) => {
+    const id = aktivIdRef.current;
+    if (!id) return;
+    aktivIdRef.current = null;
+    setAktivId(null);
+    setOverVann(false);
+
+    const t = ting.find((x) => x.id === id);
+    if (!t) return;
     const iVann = erOverBasseng(e.clientX, e.clientY);
 
-    if (iVann && !spillerLyd) {
-      setSpillerLyd(true);
-      // Stopp eventuell lyd som allerede spiller før ny starter
-      stoppLyd();
-      const alleredeAv = ting.filter((x) => status[x.id]?.startsWith("i-vann") && x.type === t.type).length;
-      const sone = alleredeAv, bw = 100 / 3;
-      setPos((prev) => ({ ...prev, [aktivId]: {
+    if (iVann) {
+      const sone = ting.filter((x) => x.type === t.type && status[x.id]?.startsWith("i-vann")).length;
+      const bw = 100 / 3;
+      setPos((prev) => ({ ...prev, [id]: {
         x: sone * bw + bw * 0.25 + Math.random() * bw * 0.5,
         y: t.type === "flyter" ? 10 + Math.random() * 8 : 78 + Math.random() * 10,
       }}));
-      setStatus((s) => ({ ...s, [aktivId]: t.type === "flyter" ? "i-vann-flyter" : "i-vann-synker" }));
+      setStatus((s) => ({ ...s, [id]: t.type === "flyter" ? "i-vann-flyter" : "i-vann-synker" }));
       setForklaring(t);
-      if (t.type === oppgave) pling(); else bumm();
-      await p(t.type === oppgave
+      if (t.type === oppgaveRef.current) pling(); else bumm();
+      // Ikke await — lyd spilles uavhengig av drag-logikken
+      stoppLyd();
+      p(t.type === oppgaveRef.current
         ? (t.type === "flyter" ? "vl_riktig_flyter" : "vl_riktig_synker")
         : (t.type === "flyter" ? "vl_feil_flyter" : "vl_feil_synker")
       );
-      setSpillerLyd(false);
     }
-    setAktivId(null);
-    setOverVann(false);
   };
 
   useEffect(() => {
@@ -124,7 +131,7 @@ export default function VannLabben({ onBack }) {
       window.removeEventListener("pointercancel", onUp);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [aktivId, spillerLyd]);
+  }, [aktivId]);
 
   useEffect(() => {
     if (riktige > 0 && riktige === total && !rundeOverlay && !heltFerdig) {
