@@ -1,9 +1,17 @@
 import { useState, useRef, useEffect } from "react";
 import Sky from "../../felles/Sky.jsx";
-import { playAudio, unlockAudio } from "../../felles/speak.js";
+import { playAudio, unlockAudio, preloadLyder } from "../../felles/speak.js";
+import { pling, bumm } from "../../felles/feedback.js";
 import { DYR, STEDER } from "./data.js";
 import "../../felles/sky.css";
 import "./SorterDyrene.css";
+
+preloadLyder([
+  "/lyd/fraser/sort_start.mp3",
+  "/lyd/fraser/sort_feil.mp3",
+  "/lyd/fraser/sort_ferdig.mp3",
+  ...DYR.map(d => `/lyd/sorter/${d.id}_${d.sted}.mp3`),
+]);
 
 export default function SorterDyrene({ onBack }) {
   const [rekkefolge]    = useState(() => [...DYR].sort(() => Math.random() - 0.5));
@@ -41,6 +49,7 @@ export default function SorterDyrene({ onBack }) {
   const handleDrop = async (stedId) => {
     if (!aktivtDyr) return;
     if (aktivtDyr.sted === stedId) {
+      pling();
       // Bruker forhåndsgenerert fil med riktig dyrenavn og sted
       await playAudio(
         `/lyd/sorter/${aktivtDyr.id}_${stedId}.mp3`,
@@ -49,6 +58,7 @@ export default function SorterDyrene({ onBack }) {
       fullfor(aktivtDyr.id, stedId);
       setTimeout(() => setAktivIndex((i) => i + 1), 700);
     } else {
+      bumm();
       setRisting(stedId);
       playAudio("/lyd/fraser/sort_feil.mp3", "Hmm, prøv et annet sted!");
       setTimeout(() => setRisting(null), 450);
