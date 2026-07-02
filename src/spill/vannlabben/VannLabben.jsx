@@ -1,9 +1,21 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import Sky from "../../felles/Sky.jsx";
-import { playAudio, stoppLyd } from "../../felles/speak.js";
+import { playAudio, stoppLyd, preloadLyder } from "../../felles/speak.js";
+import { pling, bumm } from "../../felles/feedback.js";
 import { TING, OPPGAVER } from "./ting.js";
 import "../../felles/sky.css";
 import "./VannLabben.css";
+
+preloadLyder([
+  "/lyd/fraser/vl_finn_flyter.mp3",
+  "/lyd/fraser/vl_finn_synker.mp3",
+  "/lyd/fraser/vl_riktig_flyter.mp3",
+  "/lyd/fraser/vl_riktig_synker.mp3",
+  "/lyd/fraser/vl_feil_flyter.mp3",
+  "/lyd/fraser/vl_feil_synker.mp3",
+  "/lyd/fraser/vl_runde_neste.mp3",
+  "/lyd/fraser/vl_ferdig.mp3",
+]);
 
 function lagStartStatus(ting) {
   return Object.fromEntries(ting.map((t) => [t.id, "venter"]));
@@ -90,6 +102,7 @@ export default function VannLabben({ onBack }) {
       }}));
       setStatus((s) => ({ ...s, [aktivId]: t.type === "flyter" ? "i-vann-flyter" : "i-vann-synker" }));
       setForklaring(t);
+      if (t.type === oppgave) pling(); else bumm();
       await p(t.type === oppgave
         ? (t.type === "flyter" ? "vl_riktig_flyter" : "vl_riktig_synker")
         : (t.type === "flyter" ? "vl_feil_flyter" : "vl_feil_synker")
