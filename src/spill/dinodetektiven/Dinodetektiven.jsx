@@ -1,9 +1,20 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import Sky from "../../felles/Sky.jsx";
-import { speak, stoppLyd, playAudio, unlockAudio } from "../../felles/speak.js";
+import { speak, stoppLyd, playAudio, unlockAudio, preloadLyder } from "../../felles/speak.js";
+import { pling, bumm } from "../../felles/feedback.js";
 import { DINO } from "./data.js";
 import "../../felles/sky.css";
 import "./Dinodetektiven.css";
+
+preloadLyder([
+  "/lyd/fraser/respons_riktig_1.mp3",
+  "/lyd/fraser/dino_feil.mp3",
+  "/lyd/fraser/dino_ferdig_bra.mp3",
+  "/lyd/fraser/dino_ferdig_ok.mp3",
+  ...DINO.map(d => `/lyd/dino/${d.id}_baesj.mp3`),
+  ...DINO.map(d => `/lyd/dino/${d.id}_riktig.mp3`),
+  ...DINO.map(d => `/lyd/dino/${d.id}_fakta2.mp3`),
+]);
 
 const RUNDER = 5;
 
@@ -68,6 +79,7 @@ export default function Dinodetektiven({ onBack }) {
     if (feedback) return;
     setValgt(dino.id);
     if (dino.id === runde.fasit.id) {
+      pling();
       setFeedback("riktig");
       setPoeng((p) => p + 1);
       setVisFakta(true);
@@ -80,6 +92,7 @@ export default function Dinodetektiven({ onBack }) {
       await playAudio(`/lyd/dino/${runde.fasit.id}_fakta2.mp3`, runde.fasit.fakta2);
       startNedtelling(1);
     } else {
+      bumm();
       setFeedback("feil");
       await playAudio("/lyd/fraser/dino_feil.mp3", "Hmm, prøv en annen!");
       setTimeout(() => { setFeedback(null); setValgt(null); }, 1100);
