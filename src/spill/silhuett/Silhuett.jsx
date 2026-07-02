@@ -1,9 +1,18 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import Sky from "../../felles/Sky.jsx";
-import { playAudio, stoppLyd, unlockAudio } from "../../felles/speak.js";
+import { playAudio, stoppLyd, unlockAudio, preloadLyder } from "../../felles/speak.js";
+import { pling, bumm } from "../../felles/feedback.js";
 import { DYR } from "./data.js";
 import "../../felles/sky.css";
 import "./Silhuett.css";
+
+preloadLyder([
+  "/lyd/fraser/sil_sporsmal.mp3",
+  "/lyd/fraser/sil_ferdig.mp3",
+  "/lyd/fraser/respons_riktig_1.mp3",
+  "/lyd/fraser/respons_naer.mp3",
+  ...DYR.map(d => `/lyd/silhuett/${d.id}.mp3`),
+]);
 
 const RUNDER = 5;
 
@@ -41,6 +50,7 @@ export default function Silhuett({ onBack }) {
     if (feedback) return;
     setValgt(dyr.id);
     if (dyr.id === runde.fasit.id) {
+      pling();
       setFeedback("riktig");
       // Bruker forhåndsgenerert fil med riktig dyrenavn — ingen Web Speech
       await playAudio(
@@ -60,6 +70,7 @@ export default function Silhuett({ onBack }) {
         }
       }, 1900);
     } else {
+      bumm();
       setFeedback("feil");
       playAudio("/lyd/fraser/respons_naer.mp3", "Nesten! Se godt på formen.");
       setTimeout(() => { setFeedback(null); setValgt(null); }, 1100);
