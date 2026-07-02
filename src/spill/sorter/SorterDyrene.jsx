@@ -46,16 +46,34 @@ export default function SorterDyrene({ onBack }) {
     });
   };
 
-  const handleDrop = async (stedId) => {
-    if (!aktivtDyr) return;
-    if (aktivtDyr.sted === stedId) {
+  const stedRefs  = useRef({});
+  const holdesRef = useRef(false);
+  const aktivtDyrRef = useRef(null);
+
+  const finnSted = (clientX, clientY) => {
+    for (const sted of STEDER) {
+      const el = stedRefs.current[sted.id];
+      if (!el) continue;
+      const rect = el.getBoundingClientRect();
+      // Generøs treffflate — 20px ekstra på alle kanter
+      if (clientX >= rect.left - 20 && clientX <= rect.right + 20 &&
+          clientY >= rect.top - 20  && clientY <= rect.bottom + 20) {
+        return sted.id;
+      }
+    }
+    return null;
+  };
+
+  const handleDrop = (stedId) => {
+    const dyr = aktivtDyrRef.current;
+    if (!dyr) return;
+    if (dyr.sted === stedId) {
       pling();
-      // Bruker forhåndsgenerert fil med riktig dyrenavn og sted
-      await playAudio(
-        `/lyd/sorter/${aktivtDyr.id}_${stedId}.mp3`,
-        `Ja! ${aktivtDyr.navn} bor i ${STEDER.find(s => s.id === stedId).navn.toLowerCase()}et!`
+      playAudio(
+        `/lyd/sorter/${dyr.id}_${stedId}.mp3`,
+        `Ja! ${dyr.navn} bor i ${STEDER.find(s => s.id === stedId).navn.toLowerCase()}et!`
       );
-      fullfor(aktivtDyr.id, stedId);
+      fullfor(dyr.id, stedId);
       setTimeout(() => setAktivIndex((i) => i + 1), 700);
     } else {
       bumm();
@@ -70,25 +88,29 @@ export default function SorterDyrene({ onBack }) {
     const rect = dyrRef.current.getBoundingClientRect();
     dragOffset.current = { dx: e.clientX - (rect.left + rect.width / 2), dy: e.clientY - (rect.top + rect.height / 2) };
     setPekerPos({ x: e.clientX, y: e.clientY });
+    holdesRef.current = true;
     setHoldes(true);
   };
 
   const onMove = (e) => {
+    if (!holdesRef.current) return;
     setPekerPos({ x: e.clientX, y: e.clientY });
-    const el = document.elementFromPoint(e.clientX, e.clientY);
-    setDragOverSted(el?.closest?.("[data-sted]")?.getAttribute("data-sted") || null);
+    setDragOverSted(finnSted(e.clientX, e.clientY));
   };
 
   const onUp = (e) => {
+    if (!holdesRef.current) return;
+    holdesRef.current = false;
     setHoldes(false);
-    const el = document.elementFromPoint(e.clientX, e.clientY);
-    const sted = el?.closest?.("[data-sted]");
-    if (sted) handleDrop(sted.getAttribute("data-sted"));
+    const stedId = finnSted(e.clientX, e.clientY);
+    if (stedId) handleDrop(stedId);
     else setDragOverSted(null);
   };
 
+  // Hold aktivtDyrRef oppdatert
+  useEffect(() => { aktivtDyrRef.current = aktivtDyr || null; }, [aktivtDyr]);
+
   useEffect(() => {
-    if (!holdes) return;
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
     window.addEventListener("pointercancel", onUp);
@@ -98,7 +120,7 @@ export default function SorterDyrene({ onBack }) {
       window.removeEventListener("pointercancel", onUp);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [holdes]);
+  }, []);
 
   if (ferdig) return (
     <div className="sort-scene"><Sky />
@@ -118,7 +140,9 @@ export default function SorterDyrene({ onBack }) {
       <p className="sort-instruks">Dra dyret dit det bor!</p>
       <div className="sort-steder">
         {STEDER.map((sted) => (
-          <div key={sted.id} data-sted={sted.id}
+          <div key={sted.id}
+            ref={(el) => (stedRefs.current[sted.id] = el)}
+            data-sted={sted.id}
             className={"sort-sted" + (dragOverSted === sted.id ? " sted-over" : "") + (risting === sted.id ? " sted-rist" : "")}
             style={{ background: sted.farge, borderColor: sted.kant }}>
             <span className="sort-sted-emoji">{sted.emoji}</span>
