@@ -1,9 +1,18 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import Sky from "../../felles/Sky.jsx";
-import { playAudio, stoppLyd, unlockAudio } from "../../felles/speak.js";
+import { playAudio, stoppLyd, unlockAudio, preloadLyder } from "../../felles/speak.js";
+import { pling, bumm } from "../../felles/feedback.js";
 import { DYR } from "./data.js";
 import "../../felles/sky.css";
 import "./LydDetektiven.css";
+
+preloadLyder([
+  "/lyd/fraser/lyd_sporsmal.mp3",
+  "/lyd/fraser/lyd_riktig.mp3",
+  "/lyd/fraser/lyd_feil.mp3",
+  "/lyd/fraser/lyd_ferdig.mp3",
+  ...DYR.map(d => d.src),
+]);
 
 const RUNDER = 5;
 
@@ -51,6 +60,7 @@ export default function LydDetektiven({ onBack }) {
     if (feedback) return;
     setValgt(dyr.id);
     if (dyr.id === runde.fasit.id) {
+      pling();
       setFeedback("riktig");
       await playAudio("/lyd/fraser/lyd_riktig.mp3", `Riktig! Det var ${runde.fasit.navn}en!`);
       setTimeout(() => {
@@ -66,6 +76,7 @@ export default function LydDetektiven({ onBack }) {
         }
       }, 1700);
     } else {
+      bumm();
       setFeedback("feil");
       await playAudio("/lyd/fraser/lyd_feil.mp3", "Lytt en gang til!");
       setTimeout(() => { setFeedback(null); setValgt(null); }, 1100);
