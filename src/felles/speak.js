@@ -1,5 +1,6 @@
 let aktivAudio = null;
 let audioUnlocked = false;
+const preloadCache = new Map(); // src → Audio-objekt
 
 export async function unlockAudio() {
   if (audioUnlocked) return;
@@ -16,6 +17,17 @@ export async function unlockAudio() {
       audioUnlocked = true;
     } catch { /* ignorerer */ }
   }
+}
+
+// Preload et sett med lydfiler i bakgrunnen så de er klare når de trengs
+export function preloadLyder(srcs) {
+  srcs.forEach((src) => {
+    if (preloadCache.has(src)) return;
+    const a = new Audio();
+    a.preload = "auto";
+    a.src = src;
+    preloadCache.set(src, a);
+  });
 }
 
 function getBestVoice() {
@@ -54,20 +66,55 @@ export function stoppLyd() {
 export function playAudio(src, fallbackTekst) {
   return new Promise((resolve) => {
     if (aktivAudio) { aktivAudio.pause(); aktivAudio = null; }
-    const audio = new Audio(src);
+
+    // Bruk preloaded versjon hvis tilgjengelig
+    const audio = preloadCache.get(src) || new Audio(src);
+    if (!preloadCache.has(src)) {
+      audio.preload = "auto";
+    }
     aktivAudio = audio;
+
     let ferdig = false;
-    const avslutt = () => { if (!ferdig) { ferdig = true; resolve(); } };
+    let fallbackTimer = null;
+
+    const avslutt = () => {
+      if (!ferdig) {
+        ferdig = true;
+        clearTimeout(fallbackTimer);
+        // Nullstill preloaded audio slik at den kan spilles igjen
+        if (preloadCache.has(src)) {
+          try { audio.currentTime = 0; } catch {}
+        }
+        resolve();
+      }
+    };
+
     audio.onended = avslutt;
     audio.onerror = async () => {
       if (ferdig) return;
       ferdig = true;
+      clearTimeout(fallbackTimer);
       await new Promise((r) => speak(fallbackTekst, r));
       resolve();
     };
-    audio.play().catch(async () => {
+
+    // Kortere timeout: 400ms på å starte avspilling, ellers fallback
+    fallbackTimer = setTimeout(async () => {
       if (ferdig) return;
       ferdig = true;
+      try { audio.pause(); } catch {}
+      await new Promise((r) => speak(fallbackTekst, r));
+      resolve();
+    }, 400);
+
+    audio.play().then(() => {
+      // Avspilling startet — fjern fallback-timer
+      clearTimeout(fallbackTimer);
+      fallbackTimer = null;
+    }).catch(async () => {
+      if (ferdig) return;
+      ferdig = true;
+      clearTimeout(fallbackTimer);
       await new Promise((r) => speak(fallbackTekst, r));
       resolve();
     });
