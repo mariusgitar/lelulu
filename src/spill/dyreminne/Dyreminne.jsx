@@ -1,9 +1,17 @@
 import { useState, useRef, useEffect } from "react";
 import Sky from "../../felles/Sky.jsx";
-import { playAudio, stoppLyd, unlockAudio } from "../../felles/speak.js";
+import { playAudio, stoppLyd, unlockAudio, preloadLyder } from "../../felles/speak.js";
+import { pling, bumm } from "../../felles/feedback.js";
 import { DYR } from "./data.js";
 import "../../felles/sky.css";
 import "./Dyreminne.css";
+
+preloadLyder([
+  "/lyd/fraser/min_start.mp3",
+  "/lyd/fraser/min_riktig.mp3",
+  "/lyd/fraser/min_feil.mp3",
+  ...DYR.map(d => d.src),
+]);
 
 function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
 
@@ -71,6 +79,7 @@ export default function Dyreminne({ onBack }) {
     const indeks = ny.length - 1;
 
     if (sekvensRef.current[indeks].id !== dyr.id) {
+      bumm();
       setStatus("feil");
       if (runde > highscore) setHighscore(runde);
       await sleep(400);
@@ -82,6 +91,7 @@ export default function Dyreminne({ onBack }) {
     setInputListe(ny);
 
     if (ny.length === sekvensRef.current.length) {
+      pling();
       setStatus("riktig");
       await sleep(1000);
       await playAudio("/lyd/fraser/min_riktig.mp3", "Bra husket! Neste runde!");

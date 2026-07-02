@@ -1,9 +1,17 @@
 import { useState, useMemo, useEffect } from "react";
 import Sky from "../../felles/Sky.jsx";
-import { playAudio, stoppLyd, unlockAudio } from "../../felles/speak.js";
+import { playAudio, stoppLyd, unlockAudio, preloadLyder } from "../../felles/speak.js";
+import { pling, bumm } from "../../felles/feedback.js";
 import { SCENER } from "./data.js";
 import "../../felles/sky.css";
 import "./FinnForskjellen.css";
+
+preloadLyder([
+  "/lyd/fraser/ff_sporsmal.mp3",
+  "/lyd/fraser/ff_ferdig.mp3",
+  "/lyd/fraser/respons_riktig_1.mp3",
+  "/lyd/fraser/respons_feil.mp3",
+]);
 
 function lagSceneB(scene) {
   return scene.objekter.map((o) => o.id === scene.forskjell ? { ...o, emoji: scene.endring.til } : o);
@@ -49,9 +57,11 @@ export default function FinnForskjellen({ onBack }) {
   const trykk = (id) => {
     if (funnet) return;
     if (id === scene.forskjell) {
+      pling();
       setFunnet(true);
       playAudio("/lyd/fraser/respons_riktig_1.mp3", "Du fant den!");
     } else {
+      bumm();
       playAudio("/lyd/fraser/respons_feil.mp3", "Ikke der, se videre!");
     }
   };
