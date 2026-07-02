@@ -154,14 +154,15 @@ export default function SorterDyrene({ onBack }) {
         ))}
       </div>
       <div className="sort-dra-omrade">
-        {aktivtDyr && (
-          <div ref={dyrRef}
-            className={"sort-drabart" + (holdes ? " sort-holdes" : "")}
-            onPointerDown={onPointerDown}
-            style={holdes ? { position: "fixed", left: pekerPos.x - dragOffset.current.dx, top: pekerPos.y - dragOffset.current.dy, transform: "translate(-50%,-50%) scale(1.15)", zIndex: 50 } : {}}>
-            <span className="sort-dyr-emoji">{aktivtDyr.emoji}</span>
-          </div>
-        )}
+        <div ref={dyrRef}
+          className={"sort-drabart" + (holdes ? " sort-holdes" : "") + (!aktivtDyr ? " sort-ledig" : "")}
+          onPointerDown={aktivtDyr ? onPointerDown : undefined}
+          style={holdes ? { position: "fixed", left: pekerPos.x - dragOffset.current.dx, top: pekerPos.y - dragOffset.current.dy, transform: "translate(-50%,-50%) scale(1.15)", zIndex: 50 } : {}}>
+          {aktivtDyr
+            ? <span className="sort-dyr-emoji">{aktivtDyr.emoji}</span>
+            : <span className="sort-hake">✓</span>
+          }
+        </div>
         <p className="sort-dyr-navn">{aktivtDyr?.navn ?? ""}</p>
       </div>
     </div>
