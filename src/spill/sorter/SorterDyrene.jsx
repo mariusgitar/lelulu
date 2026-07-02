@@ -22,6 +22,7 @@ export default function SorterDyrene({ onBack }) {
   const [ferdig, setFerdig]         = useState(false);
   const [holdes, setHoldes]         = useState(false);
   const [pekerPos, setPekerPos]     = useState({ x: 0, y: 0 });
+  const [leverert, setLeverert]     = useState(false);
   const dragOffset = useRef({ dx: 0, dy: 0 });
   const dyrRef     = useRef(null);
   const aktivtDyr  = rekkefolge[aktivIndex];
@@ -69,12 +70,13 @@ export default function SorterDyrene({ onBack }) {
     if (!dyr) return;
     if (dyr.sted === stedId) {
       pling();
+      setLeverert(true);
       playAudio(
         `/lyd/sorter/${dyr.id}_${stedId}.mp3`,
         `Ja! ${dyr.navn} bor i ${STEDER.find(s => s.id === stedId).navn.toLowerCase()}et!`
       );
       fullfor(dyr.id, stedId);
-      setTimeout(() => setAktivIndex((i) => i + 1), 700);
+      setTimeout(() => { setAktivIndex((i) => i + 1); setLeverert(false); }, 700);
     } else {
       bumm();
       setRisting(stedId);
@@ -155,15 +157,15 @@ export default function SorterDyrene({ onBack }) {
       </div>
       <div className="sort-dra-omrade">
         <div ref={dyrRef}
-          className={"sort-drabart" + (holdes ? " sort-holdes" : "") + (!aktivtDyr ? " sort-ledig" : "")}
-          onPointerDown={aktivtDyr ? onPointerDown : undefined}
+          className={"sort-drabart" + (holdes ? " sort-holdes" : "") + (leverert ? " sort-ledig" : "")}
+          onPointerDown={!leverert && aktivtDyr ? onPointerDown : undefined}
           style={holdes ? { position: "fixed", left: pekerPos.x - dragOffset.current.dx, top: pekerPos.y - dragOffset.current.dy, transform: "translate(-50%,-50%) scale(1.15)", zIndex: 50 } : {}}>
-          {aktivtDyr
-            ? <span className="sort-dyr-emoji">{aktivtDyr.emoji}</span>
-            : <span className="sort-hake">✓</span>
+          {leverert
+            ? <span className="sort-hake">✓</span>
+            : aktivtDyr ? <span className="sort-dyr-emoji">{aktivtDyr.emoji}</span> : null
           }
         </div>
-        <p className="sort-dyr-navn">{aktivtDyr?.navn ?? ""}</p>
+        <p className="sort-dyr-navn">{!leverert ? (aktivtDyr?.navn ?? "") : ""}</p>
       </div>
     </div>
   );
