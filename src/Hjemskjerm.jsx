@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import Sky from "./felles/Sky.jsx";
+import { unlockAudio } from "./felles/speak.js";
 import "./felles/sky.css";
 import "./Hjemskjerm.css";
 
@@ -39,8 +40,10 @@ function SpillKort({ spill, onOpen }) {
     const dx = Math.abs(e.clientX - startPosRef.current.x);
     const dy = Math.abs(e.clientY - startPosRef.current.y);
     startPosRef.current = null;
-    // Ignorer hvis fingeren beveget seg mer enn 10px — det er en scroll
     if (dx > 10 || dy > 10) return;
+
+    // Lås opp audio i bruker-event-konteksten — før spillet lastes
+    unlockAudio();
 
     setTrykket(true);
     const nye = spill.burst.map((emoji, i) => ({
