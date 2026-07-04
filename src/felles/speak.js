@@ -1,6 +1,7 @@
 let aktivAudio = null;
 let audioUnlocked = false;
 let audioCtx = null;
+const preloadCache = new Map();
 
 function getCtx() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
