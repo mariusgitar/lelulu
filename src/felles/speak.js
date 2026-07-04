@@ -83,19 +83,18 @@ export function stoppLyd() {
 
 export function playAudio(src, fallbackTekst) {
   return new Promise((resolve) => {
-    // Stopp forrige lyd
     if (aktivAudio) {
       try { aktivAudio.pause(); aktivAudio.src = ""; } catch {}
       aktivAudio = null;
     }
 
-    // Resume AudioContext hvis suspended (skjer på iOS etter inaktivitet)
     if (audioCtx && audioCtx.state === "suspended") {
       audioCtx.resume().catch(() => {});
     }
 
     const cachet = preloadCache.get(src);
     const audio = cachet || new Audio();
+    if (!cachet) audio.src = src; // sett src normalt for ikke-cachede
     aktivAudio = audio;
 
     let ferdig = false;
@@ -103,6 +102,7 @@ export function playAudio(src, fallbackTekst) {
     const avslutt = () => {
       if (ferdig) return;
       ferdig = true;
+      clearTimeout(timer);
       if (aktivAudio === audio) aktivAudio = null;
       if (cachet) { try { audio.currentTime = 0; } catch {} }
       resolve();
@@ -111,25 +111,23 @@ export function playAudio(src, fallbackTekst) {
     const brukFallback = () => {
       if (ferdig) return;
       ferdig = true;
+      clearTimeout(timer);
       if (aktivAudio === audio) aktivAudio = null;
-      try { audio.pause(); if (!cachet) audio.src = ""; } catch {}
-      if (fallbackTekst) { speak(fallbackTekst, resolve); }
-      else { resolve(); }
+      try { audio.pause(); } catch {}
+      if (fallbackTekst) speak(fallbackTekst, resolve);
+      else resolve();
     };
 
     audio.onended = avslutt;
     audio.onerror = brukFallback;
 
-    const timer = setTimeout(brukFallback, 2000);
+    // 3 sekunder — nok til å laste og starte selv på treg tilkobling
+    const timer = setTimeout(brukFallback, 3000);
 
-    if (cachet) {
-      // Cachet fil — src allerede satt, bare play()
-      audio.play().then(() => clearTimeout(timer)).catch(() => { clearTimeout(timer); brukFallback(); });
-    } else {
-      // Ikke cachet — sett src ETTER play() (iOS-trick)
-      audio.play().then(() => clearTimeout(timer)).catch(() => { clearTimeout(timer); brukFallback(); });
-      audio.src = src;
-    }
+    audio.play().catch(() => {
+      clearTimeout(timer);
+      brukFallback();
+    });
   });
 }
 
