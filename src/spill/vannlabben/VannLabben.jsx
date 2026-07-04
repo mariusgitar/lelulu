@@ -6,16 +6,7 @@ import { TING, OPPGAVER } from "./ting.js";
 import "../../felles/sky.css";
 import "./VannLabben.css";
 
-preloadLyder([
-  "/lyd/fraser/vl_finn_flyter.mp3",
-  "/lyd/fraser/vl_finn_synker.mp3",
-  "/lyd/fraser/vl_riktig_flyter.mp3",
-  "/lyd/fraser/vl_riktig_synker.mp3",
-  "/lyd/fraser/vl_feil_flyter.mp3",
-  "/lyd/fraser/vl_feil_synker.mp3",
-  "/lyd/fraser/vl_runde_neste.mp3",
-  "/lyd/fraser/vl_ferdig.mp3",
-]);
+preloadLyder(["/lyd/fraser/vl_finn_flyter.mp3"]);
 
 function lagStartStatus(ting) {
   return Object.fromEntries(ting.map((t) => [t.id, "venter"]));
