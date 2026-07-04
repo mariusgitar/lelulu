@@ -1,30 +1,38 @@
 let aktivAudio = null;
 let audioUnlocked = false;
-const preloadCache = new Map(); // src → Audio-objekt
+let audioCtx = null;
+
+function getCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
 
 export async function unlockAudio() {
   if (audioUnlocked) return;
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = getCtx();
     await ctx.resume();
+    // Spill et stille klipp for å "varme opp" iOS audio
+    const buf = ctx.createBuffer(1, 1, 22050);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(ctx.destination);
+    src.start(0);
     audioUnlocked = true;
   } catch {
-    try {
-      const a = new Audio();
-      a.src = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
-      await a.play();
-      a.pause();
-      audioUnlocked = true;
-    } catch { /* ignorerer */ }
+    audioUnlocked = true; // fortsett uansett
   }
 }
 
-// Preload et sett med lydfiler i bakgrunnen så de er klare når de trengs
+// Preload et lite antall lydfiler (maks 3 om gangen for iOS-kompatibilitet)
+// Bruk bare på de filene som spilles ALLER FØRST i et spill
 export function preloadLyder(srcs) {
-  srcs.forEach((src) => {
+  // iOS tåler ikke mange samtidige Audio-objekter — begrens til 3
+  const begrenset = srcs.slice(0, 3);
+  begrenset.forEach((src) => {
     if (preloadCache.has(src)) return;
     const a = new Audio();
-    a.preload = "auto";
+    a.preload = "metadata"; // "metadata" i stedet for "auto" — laster header, ikke hele filen
     a.src = src;
     preloadCache.set(src, a);
   });
@@ -47,81 +55,83 @@ export function speak(tekst, onEnd) {
     const synth = window.speechSynthesis;
     if (!synth || !tekst) { onEnd?.(); return; }
     synth.cancel();
-    const u = new SpeechSynthesisUtterance(tekst);
-    const voice = getBestVoice();
-    if (voice) { u.voice = voice; u.lang = voice.lang || "nb-NO"; } else { u.lang = "nb-NO"; }
-    u.rate = 0.82;
-    u.pitch = 1.0;
-    u.onend = onEnd || null;
-    u.onerror = onEnd || null;
-    synth.speak(u);
+    // iOS krever liten forsinkelse etter cancel() før ny tale starter
+    setTimeout(() => {
+      const u = new SpeechSynthesisUtterance(tekst);
+      const voice = getBestVoice();
+      if (voice) { u.voice = voice; u.lang = voice.lang || "nb-NO"; }
+      else { u.lang = "nb-NO"; }
+      u.rate = 0.82;
+      u.pitch = 1.0;
+      u.onend  = onEnd || null;
+      u.onerror = () => onEnd?.();
+      synth.speak(u);
+    }, 50);
   } catch { onEnd?.(); }
 }
 
 export function stoppLyd() {
-  if (aktivAudio) { aktivAudio.pause(); aktivAudio = null; }
-  if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+  if (aktivAudio) {
+    try { aktivAudio.pause(); aktivAudio.src = ""; } catch {}
+    aktivAudio = null;
+  }
+  try {
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+  } catch {}
 }
 
 export function playAudio(src, fallbackTekst) {
   return new Promise((resolve) => {
-    if (aktivAudio) { aktivAudio.pause(); aktivAudio = null; }
-
-    // Bruk preloaded versjon hvis tilgjengelig
-    const audio = preloadCache.get(src) || new Audio(src);
-    if (!preloadCache.has(src)) {
-      audio.preload = "auto";
+    // Stopp forrige lyd
+    if (aktivAudio) {
+      try { aktivAudio.pause(); aktivAudio.src = ""; } catch {}
+      aktivAudio = null;
     }
+
+    // Resume AudioContext hvis suspended (skjer på iOS etter inaktivitet)
+    if (audioCtx && audioCtx.state === "suspended") {
+      audioCtx.resume().catch(() => {});
+    }
+
+    const cachet = preloadCache.get(src);
+    const audio = cachet || new Audio();
     aktivAudio = audio;
 
     let ferdig = false;
-    let fallbackTimer = null;
 
     const avslutt = () => {
-      if (!ferdig) {
-        ferdig = true;
-        clearTimeout(fallbackTimer);
-        // Nullstill preloaded audio slik at den kan spilles igjen
-        if (preloadCache.has(src)) {
-          try { audio.currentTime = 0; } catch {}
-        }
-        resolve();
-      }
+      if (ferdig) return;
+      ferdig = true;
+      if (aktivAudio === audio) aktivAudio = null;
+      if (cachet) { try { audio.currentTime = 0; } catch {} }
+      resolve();
+    };
+
+    const brukFallback = () => {
+      if (ferdig) return;
+      ferdig = true;
+      if (aktivAudio === audio) aktivAudio = null;
+      try { audio.pause(); if (!cachet) audio.src = ""; } catch {}
+      if (fallbackTekst) { speak(fallbackTekst, resolve); }
+      else { resolve(); }
     };
 
     audio.onended = avslutt;
-    audio.onerror = async () => {
-      if (ferdig) return;
-      ferdig = true;
-      clearTimeout(fallbackTimer);
-      await new Promise((r) => speak(fallbackTekst, r));
-      resolve();
-    };
+    audio.onerror = brukFallback;
 
-    // Kortere timeout: 400ms på å starte avspilling, ellers fallback
-    fallbackTimer = setTimeout(async () => {
-      if (ferdig) return;
-      ferdig = true;
-      try { audio.pause(); } catch {}
-      await new Promise((r) => speak(fallbackTekst, r));
-      resolve();
-    }, 400);
+    const timer = setTimeout(brukFallback, 2000);
 
-    audio.play().then(() => {
-      // Avspilling startet — fjern fallback-timer
-      clearTimeout(fallbackTimer);
-      fallbackTimer = null;
-    }).catch(async () => {
-      if (ferdig) return;
-      ferdig = true;
-      clearTimeout(fallbackTimer);
-      await new Promise((r) => speak(fallbackTekst, r));
-      resolve();
-    });
+    if (cachet) {
+      // Cachet fil — src allerede satt, bare play()
+      audio.play().then(() => clearTimeout(timer)).catch(() => { clearTimeout(timer); brukFallback(); });
+    } else {
+      // Ikke cachet — sett src ETTER play() (iOS-trick)
+      audio.play().then(() => clearTimeout(timer)).catch(() => { clearTimeout(timer); brukFallback(); });
+      audio.src = src;
+    }
   });
 }
 
-// Spiller en liste med {src, fallback} i sekvens med valgfri pause mellom
 export async function playSekvens(klipp, { pauseMs = 150, onStart, signal } = {}) {
   for (let i = 0; i < klipp.length; i++) {
     if (signal?.avbrutt) return;
