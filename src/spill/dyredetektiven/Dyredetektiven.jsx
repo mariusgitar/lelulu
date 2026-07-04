@@ -4,23 +4,8 @@ import { pling, bumm } from "../../felles/feedback.js";
 import { DYR } from "./dyr.js";
 import "./Dyredetektiven.css";
 
-// Preload fraser og de vanligste tallene ved oppstart
-preloadLyder([
-  "/lyd/fraser/velkomst.mp3",
-  "/lyd/fraser/idle_start.mp3",
-  "/lyd/fraser/respons_riktig_1.mp3",
-  "/lyd/fraser/respons_riktig_2.mp3",
-  "/lyd/fraser/respons_riktig_3.mp3",
-  "/lyd/fraser/respons_naer.mp3",
-  "/lyd/fraser/respons_feil.mp3",
-  "/lyd/fraser/visste_du_at.mp3",
-  "/lyd/fraser/slutt_perfekt.mp3",
-  "/lyd/fraser/slutt_bra.mp3",
-  "/lyd/fraser/slutt_ok.mp3",
-  "/lyd/fraser/slutt_prov.mp3",
-  // Tall 1–50 er de vanligste svarene
-  ...Array.from({ length: 50 }, (_, i) => `/lyd/tall/${i + 1}.mp3`),
-]);
+// Preload bare velkomstlyden — den første som spilles
+preloadLyder(["/lyd/fraser/velkomst.mp3"]);
 
 const RUNDER = 5;
 const IDLE_MS = 8000;
