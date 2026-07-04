@@ -6,13 +6,7 @@ import { DYR } from "./data.js";
 import "../../felles/sky.css";
 import "./Silhuett.css";
 
-preloadLyder([
-  "/lyd/fraser/sil_sporsmal.mp3",
-  "/lyd/fraser/sil_ferdig.mp3",
-  "/lyd/fraser/respons_riktig_1.mp3",
-  "/lyd/fraser/respons_naer.mp3",
-  ...DYR.map(d => `/lyd/silhuett/${d.id}.mp3`),
-]);
+preloadLyder(["/lyd/fraser/sil_sporsmal.mp3"]);
 
 const RUNDER = 5;
 
