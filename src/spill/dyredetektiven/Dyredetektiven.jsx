@@ -1,23 +1,13 @@
 import { useState, useEffect, useRef } from "react";
-import { speak, stoppLyd, playAudio, playSekvens, unlockAudio, preloadLyder } from "../../felles/speak.js";
+import { speak, stoppLyd, playAudio, unlockAudio, preloadLyder } from "../../felles/speak.js";
 import { pling, bumm } from "../../felles/feedback.js";
 import { DYR } from "./dyr.js";
 import "./Dyredetektiven.css";
 
-// Preload bare velkomstlyden — den første som spilles
 preloadLyder(["/lyd/fraser/velkomst.mp3"]);
 
-const RUNDER = 5;
-const IDLE_MS = 8000;
-
-// Filstier
-const f = {
-  fraser: (navn) => ({ src: `/lyd/fraser/${navn}.mp3`, fallback: "" }),
-  sporsmal: (slug, navn) => ({ src: `/lyd/dyr/${slug}_sporsmal.mp3`, fallback: `Hvor gammel kan en ${navn.toLowerCase()} omtrent bli?` }),
-  tall: (n) => ({ src: `/lyd/tall/${n}.mp3`, fallback: `${n} år` }),
-  fakta: (slug, tekst) => ({ src: `/lyd/fakta/${slug}.mp3`, fallback: tekst }),
-};
-
+const RUNDER  = 5;
+const IDLE_MS = 10000;
 const RESPONS_RIKTIG = ["respons_riktig_1", "respons_riktig_2", "respons_riktig_3"];
 
 function lagAlternativer(fasit) {
@@ -33,9 +23,26 @@ function lagAlternativer(fasit) {
 function kalkulerPoeng(valgt, fasit, alt) {
   if (valgt === fasit) return 3;
   const gale = alt.filter((a) => a !== fasit);
-  const diff = Math.abs(valgt - fasit);
+  const diff  = Math.abs(valgt - fasit);
   const annen = Math.abs((gale.find((g) => g !== valgt) ?? fasit) - fasit);
   return diff < annen ? 2 : 1;
+}
+
+// Spill én fil, returnerer Promise
+function spill(src, fallback) {
+  return playAudio(src, fallback);
+}
+
+// Spill sekvens — sjekker versjon mellom hvert klipp
+async function spillSekvens(klipp, versjonRef, minVersjon, { pauseMs = 250, onStart } = {}) {
+  for (let i = 0; i < klipp.length; i++) {
+    if (versjonRef.current !== minVersjon) return;
+    onStart?.(i);
+    await spill(klipp[i].src, klipp[i].fallback);
+    if (versjonRef.current !== minVersjon) return;
+    if (pauseMs && i < klipp.length - 1)
+      await new Promise((r) => setTimeout(r, pauseMs));
+  }
 }
 
 export default function Dyredetektiven({ onBack }) {
@@ -49,69 +56,70 @@ export default function Dyredetektiven({ onBack }) {
   const [sistePoeng, setSistePoeng] = useState(0);
   const [nedtelling, setNedtelling] = useState(null);
 
-  const idleRef  = useRef(null);
-  const autoRef  = useRef(null);
-  const faseRef  = useRef(fase);
-  const valgtRef = useRef(valgt);
-  const dyrRef   = useRef(null);
-  const altRef   = useRef([]);
-  const signalRef = useRef({ avbrutt: false });
+  // Versjonskounter — økes ved hver ny handling, avbryter gamle sekvenser
+  const versjonRef  = useRef(0);
+  const idleRef     = useRef(null);
+  const autoRef     = useRef(null);
+  const faseRef     = useRef(fase);
+  const valgtRef    = useRef(valgt);
+  const dyrRef      = useRef(null);
+  const altRef      = useRef([]);
 
   useEffect(() => { faseRef.current = fase; }, [fase]);
   useEffect(() => { valgtRef.current = valgt; }, [valgt]);
 
-  const clearIdle = () => clearTimeout(idleRef.current);
-
-  const nyttSignal = () => {
-    signalRef.current.avbrutt = true;
+  // Avbryter alle pågående lydsekvenser og timere
+  const avbryt = () => {
+    versjonRef.current += 1;
+    clearTimeout(idleRef.current);
+    clearInterval(autoRef.current);
     stoppLyd();
-    const s = { avbrutt: false };
-    signalRef.current = s;
-    return s;
+    setOpplestIndeks(-1);
+    setNedtelling(null);
   };
 
-  const spillSporsmalOgAlternativer = async (dyr, alt, signal) => {
-    await playAudio(
-      `/lyd/dyr/${dyr.slug}_sporsmal.mp3`,
-      `Hvor gammel kan en ${dyr.navn.toLowerCase()} omtrent bli?`
-    );
-    if (signal.avbrutt) return;
-    await playSekvens(
-      alt.map((v, i) => ({ src: `/lyd/tall/${v}.mp3`, fallback: `${v} år` })),
-      {
-        pauseMs: 400,
-        signal,
-        onStart: (i) => setOpplestIndeks(i),
-      }
-    );
-    if (!signal.avbrutt) {
-      setOpplestIndeks(-1);
-      startIdle();
-    }
-  };
-
-  const startIdle = () => {
-    clearIdle();
+  const startIdle = (v) => {
+    clearTimeout(idleRef.current);
     idleRef.current = setTimeout(async () => {
+      if (versjonRef.current !== v) return;
       if (faseRef.current === "start") {
-        await playAudio("/lyd/fraser/idle_start.mp3", "Trykk på den gule knappen for å starte!");
+        await spill("/lyd/fraser/idle_start.mp3", "Trykk på den gule knappen for å starte!");
       } else if (faseRef.current === "gjett" && valgtRef.current === null && dyrRef.current) {
-        const signal = nyttSignal();
-        await spillSporsmalOgAlternativer(dyrRef.current, altRef.current, signal);
+        const v2 = versjonRef.current;
+        await spillSporsmalOgAlternativer(dyrRef.current, altRef.current, v2);
       }
     }, IDLE_MS);
   };
 
+  const spillSporsmalOgAlternativer = async (dyr, alt, v) => {
+    await spill(
+      `/lyd/dyr/${dyr.slug}_sporsmal.mp3`,
+      `Hvor gammel kan en ${dyr.navn.toLowerCase()} omtrent bli?`
+    );
+    if (versjonRef.current !== v) return;
+    await spillSekvens(
+      alt.map((n) => ({ src: `/lyd/tall/${n}.mp3`, fallback: `${n} år` })),
+      versjonRef, v,
+      { pauseMs: 400, onStart: (i) => setOpplestIndeks(i) }
+    );
+    if (versjonRef.current === v) {
+      setOpplestIndeks(-1);
+      startIdle(v);
+    }
+  };
+
+  // Init — spill velkomst én gang
   useEffect(() => {
+    const v = versjonRef.current;
     const init = async () => {
       await new Promise((r) => setTimeout(r, 600));
-      const signal = nyttSignal();
-      await playAudio("/lyd/fraser/velkomst.mp3",
+      if (versjonRef.current !== v) return;
+      await spill("/lyd/fraser/velkomst.mp3",
         "Hei! Jeg heter Dyredetektiven. Hvor gammel kan dyrene omtrent bli? Trykk på den gule knappen for å starte!");
-      if (!signal.avbrutt) startIdle();
+      if (versjonRef.current === v) startIdle(v);
     };
     init();
-    return () => { nyttSignal(); clearIdle(); clearInterval(autoRef.current); };
+    return () => { avbryt(); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -121,8 +129,7 @@ export default function Dyredetektiven({ onBack }) {
 
   async function startSpill() {
     await unlockAudio();
-    clearIdle();
-    nyttSignal();
+    avbryt();
     const sh = [...DYR].sort(() => Math.random() - 0.5).slice(0, RUNDER);
     setRekkefolge(sh);
     setIndeks(0);
@@ -130,7 +137,13 @@ export default function Dyredetektiven({ onBack }) {
     setValgt(null);
     setSistePoeng(0);
     setFase("gjett");
-    initRunde(sh, 0);
+    // Liten forsinkelse så React rekker å rendre før lyd starter
+    await new Promise((r) => setTimeout(r, 300));
+    const v = versjonRef.current;
+    dyrRef.current = sh[0];
+    altRef.current = lagAlternativer(sh[0].maxAlder);
+    setAlternativer(altRef.current);
+    await spillSporsmalOgAlternativer(sh[0], altRef.current, v);
   }
 
   function initRunde(liste, idx) {
@@ -140,24 +153,25 @@ export default function Dyredetektiven({ onBack }) {
     setOpplestIndeks(-1);
     altRef.current = alt;
     dyrRef.current = liste[idx];
+    // Vent litt så React rekker å rendre
     setTimeout(async () => {
-      const signal = nyttSignal();
-      await spillSporsmalOgAlternativer(liste[idx], alt, signal);
-    }, 400);
+      const v = versjonRef.current;
+      await spillSporsmalOgAlternativer(liste[idx], alt, v);
+    }, 300);
   }
 
   async function velgSvar(val) {
     if (valgt !== null) return;
-    clearIdle();
-    clearInterval(autoRef.current);
-    const signal = nyttSignal();
-    setOpplestIndeks(-1);
+    avbryt();
+    const v = versjonRef.current;
     const p = kalkulerPoeng(val, gjeldende.maxAlder, alternativer);
     setValgt(val);
     setSistePoeng(p);
     setPoeng((prev) => prev + p);
+
     const riktig = val === gjeldende.maxAlder;
     if (riktig) pling(); else bumm();
+
     const respNavn = riktig
       ? RESPONS_RIKTIG[Math.floor(Math.random() * 3)]
       : p === 2 ? "respons_naer" : "respons_feil";
@@ -165,14 +179,16 @@ export default function Dyredetektiven({ onBack }) {
       ? ["Ja, det stemmer!", "Bra gjetta!", "Helt riktig!"][RESPONS_RIKTIG.indexOf(respNavn)]
       : p === 2 ? "Nesten! Du var ganske nær!" : "Ikke helt, men du prøvde!";
 
-    await playSekvens([
-      { src: `/lyd/fraser/${respNavn}.mp3`, fallback: respFallback },
-      { src: `/lyd/tall/${gjeldende.maxAlder}.mp3`, fallback: `${gjeldende.maxAlder} år` },
-      { src: `/lyd/fraser/visste_du_at.mp3`, fallback: "Visste du at..." },
-      { src: `/lyd/fakta/${gjeldende.slug}.mp3`, fallback: gjeldende.fakta },
-    ], { pauseMs: 250, signal });
+    await spillSekvens([
+      { src: `/lyd/fraser/${respNavn}.mp3`,          fallback: respFallback },
+      { src: `/lyd/tall/${gjeldende.maxAlder}.mp3`,  fallback: `${gjeldende.maxAlder} år` },
+      { src: `/lyd/fraser/visste_du_at.mp3`,         fallback: "Visste du at..." },
+      { src: `/lyd/fakta/${gjeldende.slug}.mp3`,     fallback: gjeldende.fakta },
+    ], versjonRef, v, { pauseMs: 250 });
 
-    if (signal.avbrutt) return;
+    if (versjonRef.current !== v) return;
+
+    // Nedtelling til neste
     let t = 3;
     setNedtelling(t);
     autoRef.current = setInterval(() => {
@@ -183,10 +199,7 @@ export default function Dyredetektiven({ onBack }) {
   }
 
   function neste(ekstra = 0) {
-    clearIdle();
-    clearInterval(autoRef.current);
-    setNedtelling(null);
-    nyttSignal();
+    avbryt();
     if (indeks + 1 >= RUNDER) {
       setFase("ferdig");
       const tot = poeng + ekstra;
@@ -194,7 +207,9 @@ export default function Dyredetektiven({ onBack }) {
       const pst = tot / maks;
       const slug = pst === 1 ? "slutt_perfekt" : pst >= 0.7 ? "slutt_bra" : pst >= 0.4 ? "slutt_ok" : "slutt_prov";
       const fallback = pst === 1 ? "Du er en ekte dyreekspert!" : pst >= 0.7 ? "Du kan mye om dyr!" : "Spill igjen og lær enda mer!";
-      setTimeout(() => playAudio(`/lyd/fraser/${slug}.mp3`, fallback), 400);
+      setTimeout(() => {
+        if (faseRef.current === "ferdig") spill(`/lyd/fraser/${slug}.mp3`, fallback);
+      }, 400);
     } else {
       const ny = indeks + 1;
       setIndeks(ny);
@@ -230,9 +245,9 @@ export default function Dyredetektiven({ onBack }) {
           <p className="dd-sporsmal">Hvor gammel kan en {gjeldende.navn.toLowerCase()} omtrent bli?</p>
           <div className="dd-svar-liste">
             {alternativer.map((alt, i) => {
-              const erValgt = valgt === alt;
+              const erValgt  = valgt === alt;
               const erRiktig = alt === gjeldende.maxAlder;
-              const lesNa = opplestIndeks === i;
+              const lesNa    = opplestIndeks === i;
               let bg = "rgba(255,255,255,0.07)";
               let border = "2px solid rgba(255,255,255,0.12)";
               let farge = "white";
@@ -264,10 +279,9 @@ export default function Dyredetektiven({ onBack }) {
           )}
           {valgt === null && (
             <button className="dd-stopp" onClick={async () => {
-              clearIdle();
-              const signal = nyttSignal();
-              setOpplestIndeks(-1);
-              await spillSporsmalOgAlternativer(gjeldende, alternativer, signal);
+              avbryt();
+              const v = versjonRef.current;
+              await spillSporsmalOgAlternativer(gjeldende, alternativer, v);
             }}>🔊 Les opp igjen</button>
           )}
         </div>
