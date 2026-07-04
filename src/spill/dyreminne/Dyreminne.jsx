@@ -6,12 +6,7 @@ import { DYR } from "./data.js";
 import "../../felles/sky.css";
 import "./Dyreminne.css";
 
-preloadLyder([
-  "/lyd/fraser/min_start.mp3",
-  "/lyd/fraser/min_riktig.mp3",
-  "/lyd/fraser/min_feil.mp3",
-  ...DYR.map(d => d.src),
-]);
+preloadLyder(["/lyd/fraser/min_start.mp3"]);
 
 function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
 

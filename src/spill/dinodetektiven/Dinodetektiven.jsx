@@ -6,15 +6,7 @@ import { DINO } from "./data.js";
 import "../../felles/sky.css";
 import "./Dinodetektiven.css";
 
-preloadLyder([
-  "/lyd/fraser/respons_riktig_1.mp3",
-  "/lyd/fraser/dino_feil.mp3",
-  "/lyd/fraser/dino_ferdig_bra.mp3",
-  "/lyd/fraser/dino_ferdig_ok.mp3",
-  ...DINO.map(d => `/lyd/dino/${d.id}_baesj.mp3`),
-  ...DINO.map(d => `/lyd/dino/${d.id}_riktig.mp3`),
-  ...DINO.map(d => `/lyd/dino/${d.id}_fakta2.mp3`),
-]);
+preloadLyder([`/lyd/dino/${DINO[0].id}_baesj.mp3`]);
 
 const RUNDER = 5;
 

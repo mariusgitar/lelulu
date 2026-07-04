@@ -6,12 +6,7 @@ import { SCENER } from "./data.js";
 import "../../felles/sky.css";
 import "./FinnForskjellen.css";
 
-preloadLyder([
-  "/lyd/fraser/ff_sporsmal.mp3",
-  "/lyd/fraser/ff_ferdig.mp3",
-  "/lyd/fraser/respons_riktig_1.mp3",
-  "/lyd/fraser/respons_feil.mp3",
-]);
+preloadLyder(["/lyd/fraser/ff_sporsmal.mp3"]);
 
 function lagSceneB(scene) {
   return scene.objekter.map((o) => o.id === scene.forskjell ? { ...o, emoji: scene.endring.til } : o);
