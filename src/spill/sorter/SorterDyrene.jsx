@@ -6,12 +6,7 @@ import { DYR, STEDER } from "./data.js";
 import "../../felles/sky.css";
 import "./SorterDyrene.css";
 
-preloadLyder([
-  "/lyd/fraser/sort_start.mp3",
-  "/lyd/fraser/sort_feil.mp3",
-  "/lyd/fraser/sort_ferdig.mp3",
-  ...DYR.map(d => `/lyd/sorter/${d.id}_${d.sted}.mp3`),
-]);
+preloadLyder(["/lyd/fraser/sort_start.mp3"]);
 
 export default function SorterDyrene({ onBack }) {
   const [rekkefolge]    = useState(() => [...DYR].sort(() => Math.random() - 0.5));
