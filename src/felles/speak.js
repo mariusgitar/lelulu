@@ -108,6 +108,7 @@ export function playAudio(src, fallbackTekst) {
       if (ferdig) return;
       ferdig = true;
       clearTimeout(timer);
+      if (aktivKilde === kilde) aktivKilde = null;
       resolve();
     };
 
@@ -123,7 +124,9 @@ export function playAudio(src, fallbackTekst) {
       }
     };
 
-    // Prøv AudioContext (unngår iOS autoplay-blokkering etter unlock)
+    let kilde = null;
+
+    // Prøv AudioContext
     try {
       const ctx = getCtx();
       timer = setTimeout(brukFallback, 8000);
@@ -134,18 +137,20 @@ export function playAudio(src, fallbackTekst) {
         .then((decoded) => {
           if (ferdig) return;
           clearTimeout(timer);
-          const kilde = ctx.createBufferSource();
+          kilde = ctx.createBufferSource();
           kilde.buffer = decoded;
           kilde.connect(ctx.destination);
           aktivKilde = kilde;
           kilde.onended = ok;
           kilde.start(0);
-          // Sett ny timeout basert på faktisk varighet + margin
           timer = setTimeout(ok, (decoded.duration * 1000) + 2000);
         })
-        .catch(brukFallback);
+        .catch(() => {
+          // fetch eller decode feilet — bruk fallback
+          brukFallback();
+        });
     } catch {
-      // AudioContext ikke tilgjengelig — fall tilbake til Audio-element
+      // AudioContext ikke tilgjengelig
       const audio = new Audio(src);
       aktivAudio = audio;
       audio.onended = ok;
