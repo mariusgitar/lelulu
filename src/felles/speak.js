@@ -1,19 +1,12 @@
 let aktivAudio = null;
 let audioUnlocked = false;
-let audioCtx = null;
 const preloadCache = new Map();
-
-function getCtx() {
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  return audioCtx;
-}
 
 export async function unlockAudio() {
   if (audioUnlocked) return;
   try {
-    const ctx = getCtx();
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
     await ctx.resume();
-    // Spill et stille klipp for å "varme opp" iOS audio
     const buf = ctx.createBuffer(1, 1, 22050);
     const src = ctx.createBufferSource();
     src.buffer = buf;
@@ -21,19 +14,15 @@ export async function unlockAudio() {
     src.start(0);
     audioUnlocked = true;
   } catch {
-    audioUnlocked = true; // fortsett uansett
+    audioUnlocked = true;
   }
 }
 
-// Preload et lite antall lydfiler (maks 3 om gangen for iOS-kompatibilitet)
-// Bruk bare på de filene som spilles ALLER FØRST i et spill
 export function preloadLyder(srcs) {
-  // iOS tåler ikke mange samtidige Audio-objekter — begrens til 3
-  const begrenset = srcs.slice(0, 3);
-  begrenset.forEach((src) => {
+  srcs.forEach((src) => {
     if (preloadCache.has(src)) return;
     const a = new Audio();
-    a.preload = "metadata"; // "metadata" i stedet for "auto" — laster header, ikke hele filen
+    a.preload = "auto";
     a.src = src;
     preloadCache.set(src, a);
   });
@@ -56,17 +45,18 @@ export function speak(tekst, onEnd) {
     const synth = window.speechSynthesis;
     if (!synth || !tekst) { onEnd?.(); return; }
     synth.cancel();
-    // iOS krever liten forsinkelse etter cancel() før ny tale starter
     setTimeout(() => {
-      const u = new SpeechSynthesisUtterance(tekst);
-      const voice = getBestVoice();
-      if (voice) { u.voice = voice; u.lang = voice.lang || "nb-NO"; }
-      else { u.lang = "nb-NO"; }
-      u.rate = 0.82;
-      u.pitch = 1.0;
-      u.onend  = onEnd || null;
-      u.onerror = () => onEnd?.();
-      synth.speak(u);
+      try {
+        const u = new SpeechSynthesisUtterance(tekst);
+        const voice = getBestVoice();
+        if (voice) { u.voice = voice; u.lang = voice.lang || "nb-NO"; }
+        else { u.lang = "nb-NO"; }
+        u.rate = 0.82;
+        u.pitch = 1.0;
+        u.onend  = () => onEnd?.();
+        u.onerror = () => onEnd?.();
+        synth.speak(u);
+      } catch { onEnd?.(); }
     }, 50);
   } catch { onEnd?.(); }
 }
@@ -88,13 +78,9 @@ export function playAudio(src, fallbackTekst) {
       aktivAudio = null;
     }
 
-    if (audioCtx && audioCtx.state === "suspended") {
-      audioCtx.resume().catch(() => {});
-    }
-
     const cachet = preloadCache.get(src);
-    const audio = cachet || new Audio();
-    if (!cachet) audio.src = src; // sett src normalt for ikke-cachede
+    const audio  = cachet || new Audio();
+    if (!cachet) audio.src = src;
     aktivAudio = audio;
 
     let ferdig = false;
@@ -114,17 +100,23 @@ export function playAudio(src, fallbackTekst) {
       clearTimeout(timer);
       if (aktivAudio === audio) aktivAudio = null;
       try { audio.pause(); } catch {}
-      if (fallbackTekst) speak(fallbackTekst, resolve);
-      else resolve();
+      // Bekreftet feil: tom streng ble ikke resolvet
+      if (fallbackTekst && fallbackTekst.length > 0) {
+        speak(fallbackTekst, resolve);
+      } else {
+        resolve();
+      }
     };
 
     audio.onended = avslutt;
     audio.onerror = brukFallback;
 
-    // 3 sekunder — nok til å laste og starte selv på treg tilkobling
-    const timer = setTimeout(brukFallback, 3000);
+    // 400ms til å starte avspilling, ellers fallback
+    const timer = setTimeout(brukFallback, 400);
 
-    audio.play().catch(() => {
+    audio.play().then(() => {
+      clearTimeout(timer);
+    }).catch(() => {
       clearTimeout(timer);
       brukFallback();
     });
