@@ -40,12 +40,17 @@ function getBestVoice() {
   return norske.find((v) => pref.some((p) => v.name.toLowerCase().includes(p))) || norske[0];
 }
 
+let speakTimer = null;
+
 export function speak(tekst, onEnd) {
   try {
     const synth = window.speechSynthesis;
     if (!synth || !tekst) { onEnd?.(); return; }
     synth.cancel();
-    setTimeout(() => {
+    // Kanseller evt. ventende speak-kall
+    if (speakTimer) { clearTimeout(speakTimer); speakTimer = null; }
+    speakTimer = setTimeout(() => {
+      speakTimer = null;
       try {
         const u = new SpeechSynthesisUtterance(tekst);
         const voice = getBestVoice();
@@ -66,6 +71,7 @@ export function stoppLyd() {
     try { aktivAudio.pause(); aktivAudio.src = ""; } catch {}
     aktivAudio = null;
   }
+  if (speakTimer) { clearTimeout(speakTimer); speakTimer = null; }
   try {
     if ("speechSynthesis" in window) window.speechSynthesis.cancel();
   } catch {}
@@ -111,11 +117,19 @@ export function playAudio(src, fallbackTekst) {
     audio.onended = avslutt;
     audio.onerror = brukFallback;
 
-    // 400ms til å starte avspilling, ellers fallback
-    const timer = setTimeout(brukFallback, 400);
+    // Økt til 8 sekunder — forhindrer for tidlig fallback på iOS
+    const timer = setTimeout(brukFallback, 8000);
 
     audio.play().then(() => {
+      // Avspilling startet — sett ny timeout basert på faktisk varighet
       clearTimeout(timer);
+      // Gi god margin etter at lyden starter
+      audio.addEventListener("durationchange", () => {
+        if (audio.duration && isFinite(audio.duration)) {
+          // Sett timeout til varigheten + 3 sekunder margin
+          setTimeout(brukFallback, (audio.duration * 1000) + 3000);
+        }
+      }, { once: true });
     }).catch(() => {
       clearTimeout(timer);
       brukFallback();
