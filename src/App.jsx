@@ -11,6 +11,7 @@ import FinnForskjellen from "./spill/finnforskjellen/FinnForskjellen.jsx";
 import Dinodetektiven from "./spill/dinodetektiven/Dinodetektiven.jsx";
 import Onboarding from "./foreldre/Onboarding.jsx";
 import ForeldrePanelWrapper, { saveAktiverte } from "./foreldre/ForeldrePanel.jsx";
+import { stoppLyd } from "./felles/speak.js";
 
 const SOL_KLIKK_GRENSE = 5;
 const SOL_RESET_MS     = 3000;
@@ -43,7 +44,10 @@ export default function App() {
     return () => window.removeEventListener("storage", oppdater);
   }, []);
 
-  const tilbake = () => setSkjerm("hjem");
+  const tilbake = () => {
+    stoppLyd();
+    setSkjerm("hjem");
+  };
 
   const trykkSol = () => {
     const ny = solTrykk + 1;
