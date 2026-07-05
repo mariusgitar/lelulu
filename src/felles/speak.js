@@ -1,11 +1,22 @@
-let aktivAudio = null;
+let aktivAudio   = null;
+let aktivKilde   = null;
 let audioUnlocked = false;
+let audioCtx     = null;
+let speakTimer   = null;
 const preloadCache = new Map();
+
+function getCtx() {
+  if (!audioCtx || audioCtx.state === "closed") {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (audioCtx.state === "suspended") audioCtx.resume().catch(() => {});
+  return audioCtx;
+}
 
 export async function unlockAudio() {
   if (audioUnlocked) return;
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = getCtx();
     await ctx.resume();
     const buf = ctx.createBuffer(1, 1, 22050);
     const src = ctx.createBufferSource();
@@ -40,14 +51,11 @@ function getBestVoice() {
   return norske.find((v) => pref.some((p) => v.name.toLowerCase().includes(p))) || norske[0];
 }
 
-let speakTimer = null;
-
 export function speak(tekst, onEnd) {
   try {
     const synth = window.speechSynthesis;
     if (!synth || !tekst) { onEnd?.(); return; }
     synth.cancel();
-    // Kanseller evt. ventende speak-kall
     if (speakTimer) { clearTimeout(speakTimer); speakTimer = null; }
     speakTimer = setTimeout(() => {
       speakTimer = null;
@@ -67,6 +75,10 @@ export function speak(tekst, onEnd) {
 }
 
 export function stoppLyd() {
+  if (aktivKilde) {
+    try { aktivKilde.stop(); } catch {}
+    aktivKilde = null;
+  }
   if (aktivAudio) {
     try { aktivAudio.pause(); aktivAudio.src = ""; } catch {}
     aktivAudio = null;
@@ -79,24 +91,23 @@ export function stoppLyd() {
 
 export function playAudio(src, fallbackTekst) {
   return new Promise((resolve) => {
+    // Stopp forrige
+    if (aktivKilde) {
+      try { aktivKilde.stop(); } catch {}
+      aktivKilde = null;
+    }
     if (aktivAudio) {
       try { aktivAudio.pause(); aktivAudio.src = ""; } catch {}
       aktivAudio = null;
     }
 
-    const cachet = preloadCache.get(src);
-    const audio  = cachet || new Audio();
-    if (!cachet) audio.src = src;
-    aktivAudio = audio;
-
     let ferdig = false;
+    let timer  = null;
 
-    const avslutt = () => {
+    const ok = () => {
       if (ferdig) return;
       ferdig = true;
       clearTimeout(timer);
-      if (aktivAudio === audio) aktivAudio = null;
-      if (cachet) { try { audio.currentTime = 0; } catch {} }
       resolve();
     };
 
@@ -104,9 +115,7 @@ export function playAudio(src, fallbackTekst) {
       if (ferdig) return;
       ferdig = true;
       clearTimeout(timer);
-      if (aktivAudio === audio) aktivAudio = null;
-      try { audio.pause(); } catch {}
-      // Bekreftet feil: tom streng ble ikke resolvet
+      if (aktivKilde) { try { aktivKilde.stop(); } catch {} aktivKilde = null; }
       if (fallbackTekst && fallbackTekst.length > 0) {
         speak(fallbackTekst, resolve);
       } else {
@@ -114,26 +123,36 @@ export function playAudio(src, fallbackTekst) {
       }
     };
 
-    audio.onended = avslutt;
-    audio.onerror = brukFallback;
+    // Prøv AudioContext (unngår iOS autoplay-blokkering etter unlock)
+    try {
+      const ctx = getCtx();
+      timer = setTimeout(brukFallback, 8000);
 
-    // Økt til 8 sekunder — forhindrer for tidlig fallback på iOS
-    const timer = setTimeout(brukFallback, 8000);
-
-    audio.play().then(() => {
-      // Avspilling startet — sett ny timeout basert på faktisk varighet
-      clearTimeout(timer);
-      // Gi god margin etter at lyden starter
-      audio.addEventListener("durationchange", () => {
-        if (audio.duration && isFinite(audio.duration)) {
-          // Sett timeout til varigheten + 3 sekunder margin
-          setTimeout(brukFallback, (audio.duration * 1000) + 3000);
-        }
-      }, { once: true });
-    }).catch(() => {
-      clearTimeout(timer);
-      brukFallback();
-    });
+      fetch(src)
+        .then((r) => { if (!r.ok) throw new Error("http " + r.status); return r.arrayBuffer(); })
+        .then((buf) => ctx.decodeAudioData(buf))
+        .then((decoded) => {
+          if (ferdig) return;
+          clearTimeout(timer);
+          const kilde = ctx.createBufferSource();
+          kilde.buffer = decoded;
+          kilde.connect(ctx.destination);
+          aktivKilde = kilde;
+          kilde.onended = ok;
+          kilde.start(0);
+          // Sett ny timeout basert på faktisk varighet + margin
+          timer = setTimeout(ok, (decoded.duration * 1000) + 2000);
+        })
+        .catch(brukFallback);
+    } catch {
+      // AudioContext ikke tilgjengelig — fall tilbake til Audio-element
+      const audio = new Audio(src);
+      aktivAudio = audio;
+      audio.onended = ok;
+      audio.onerror = brukFallback;
+      timer = setTimeout(brukFallback, 8000);
+      audio.play().catch(brukFallback);
+    }
   });
 }
 
