@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Bilspill</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap">
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; font-family: 'Nunito', system-ui, sans-serif; }
+  button { font-family: inherit; }
+
+  /* ---------- Hovedmeny i Lelulu-stil ---------- */
+  .meny { position: fixed; inset: 0; overflow: hidden; display: flex; flex-direction: column; align-items: center;
+    background: linear-gradient(180deg, #aee3f5 0%, #d7f0e0 62%, #eaf8ec 100%); }
+  .sol { position: absolute; top: 18px; right: 26px; width: 58px; height: 58px; border-radius: 50%;
+    background: radial-gradient(circle, #fff6c9 0%, #ffe27a 70%, #ffd95e 100%); box-shadow: 0 0 40px 10px rgba(255,222,120,.45); animation: sol 6s ease-in-out infinite; }
+  @keyframes sol { 50% { transform: scale(1.07); } }
+  .sky { position: absolute; background: #fff; border-radius: 50px; opacity: .85; left: -120px; animation: drift linear infinite; }
+  .sky::before, .sky::after { content: ''; position: absolute; background: #fff; border-radius: 50%; }
+  .s1 { width: 90px; height: 30px; top: 60px; animation-duration: 38s; } .s1::before { width: 45px; height: 45px; top: -22px; left: 10px; } .s1::after { width: 35px; height: 35px; top: -16px; left: 45px; }
+  .s2 { width: 70px; height: 24px; top: 130px; animation-duration: 50s; animation-delay: -18s; } .s2::before { width: 36px; height: 36px; top: -18px; left: 8px; } .s2::after { width: 28px; height: 28px; top: -12px; left: 36px; }
+  .s3 { width: 56px; height: 18px; top: 34px; animation-duration: 44s; animation-delay: -30s; } .s3::before { width: 28px; height: 28px; top: -14px; left: 5px; } .s3::after { width: 22px; height: 22px; top: -10px; left: 28px; }
+  @keyframes drift { to { transform: translateX(calc(100vw + 240px)); } }
+
+  .topp { position: relative; z-index: 2; text-align: center; padding-top: clamp(10px, 3vh, 34px); }
+  .tittel { margin: 0; font-weight: 900; font-size: clamp(1.7rem, 5.5vh, 2.7rem); color: #1f5c4a; letter-spacing: -.02em; text-shadow: 0 2px 0 rgba(255,255,255,.6); line-height: 1.05; }
+  .tittel span { display: inline-block; animation: hopp-bokstav 2.4s ease-in-out infinite; }
+  @keyframes hopp-bokstav { 0%, 70%, 100% { transform: translateY(0); } 80% { transform: translateY(-6px); } }
+
+  .fliser { position: relative; z-index: 2; flex: 1; width: 100%; max-width: 1100px; display: flex; flex-wrap: wrap; justify-content: center; align-content: center;
+    gap: var(--gap); padding: clamp(8px, 2vh, 20px) 18px calc(var(--vei) + 14px); max-width: calc(var(--flis) * 4 + var(--gap) * 3 + 40px); }
+  :root { --vei: clamp(54px, 13vh, 96px); --flis: min(21vw, calc((100dvh - var(--vei) - 104px) / 2 * 1.25), 230px); --gap: clamp(10px, 2.4vmin, 22px); }
+  @media (max-aspect-ratio: 1/1) { :root { --flis: min(42vw, 230px); } }
+
+  .flis { position: relative; width: var(--flis); aspect-ratio: 1.25 / 1; border: 4px solid var(--kant); border-radius: 28px; background: var(--bg);
+    box-shadow: 0 8px 0 var(--skygge); padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; cursor: pointer;
+    transition: transform .15s cubic-bezier(.34,1.56,.64,1), box-shadow .15s; overflow: visible; animation: inn .5s cubic-bezier(.34,1.56,.64,1) both; }
+  @keyframes inn { from { transform: translateY(30px) scale(.8); opacity: 0; } }
+  .flis:active, .flis.trykket { transform: translateY(5px); box-shadow: 0 3px 0 var(--skygge); }
+  .flis .scene-mini { position: absolute; left: 6%; right: 6%; top: 10%; bottom: 26%; display: grid; place-items: end center; }
+  .flis .bil { width: 100%; aspect-ratio: 2 / 1; animation: bob 2.8s ease-in-out infinite; }
+  .flis svg { width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+  .flis .bakke { position: absolute; left: 10%; right: 10%; bottom: 25%; height: 4px; border-radius: 2px; background: var(--kant); opacity: .45; }
+  .flis .merke { position: absolute; right: -10px; top: -12px; width: 30%; aspect-ratio: 1; filter: drop-shadow(0 3px 0 rgba(0,0,0,.12)); animation: vrikk 3.2s ease-in-out infinite; }
+  @keyframes vrikk { 0%, 80%, 100% { transform: rotate(0); } 85% { transform: rotate(-12deg); } 90% { transform: rotate(10deg); } 95% { transform: rotate(-5deg); } }
+  .flis .navn { position: relative; margin-bottom: 7%; font-weight: 800; font-size: clamp(.8rem, calc(var(--flis) * .085), 1.15rem); color: var(--skygge); }
+  @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+  .partikkel { position: absolute; left: 50%; top: 45%; font-size: 1.5rem; pointer-events: none; animation: burst .55s ease-out forwards; z-index: 3; }
+  @keyframes burst { from { transform: translate(-50%,-50%) scale(1); opacity: 1; } to { transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(.4); opacity: 0; } }
+
+  /* veien nederst med biler som kjører forbi */
+  .vei { position: absolute; left: 0; right: 0; bottom: 0; height: var(--vei); z-index: 1; background: #6b7280; }
+  .vei::before { content: ''; position: absolute; left: 0; right: 0; top: -10px; height: 12px; background: #8fd694; border-radius: 6px 6px 0 0; }
+  .vei::after { content: ''; position: absolute; left: 0; right: 0; top: 55%; height: 5px; background: repeating-linear-gradient(90deg, #fff 0 44px, transparent 44px 90px); opacity: .8; }
+  .forbi { position: absolute; bottom: 22%; height: calc(var(--vei) * .9); aspect-ratio: 2 / 1; z-index: 2; cursor: pointer; }
+  .forbi svg { width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+  .hjul { transform-box: fill-box; transform-origin: center; }
+  .forbi .hjul { animation: spinn .4s linear infinite; }
+  @keyframes spinn { to { transform: rotate(360deg); } }
+  .forbi.hopp svg { animation: hopp .45s ease-out; }
+  @keyframes hopp { 50% { transform: translateY(-30%); } }
+
+  /* pille-knapper i Lelulu-stil */
+  .pille { position: fixed; top: 14px; left: 14px; z-index: 50; border: none; background: rgba(255,255,255,.88); padding: 8px 14px 8px 10px; border-radius: 22px;
+    box-shadow: 0 4px 0 rgba(0,0,0,.1); display: flex; align-items: center; gap: 6px; color: #1f5c4a; font-weight: 800; font-size: .95rem; text-decoration: none; cursor: pointer; }
+  .pille svg { width: 26px; height: 26px; pointer-events: none; }
+  .pille:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,.1); }
+</style>
+</head>
+<body>
+<script src="felles/lyd.js"></script>
+<script src="felles/kjoretoy.js"></script>
+<script src="felles/dyr.js"></script>
+<script>
+// ---------- Ramme: hovedmeny + lasting av moduler ----------
+// Hver modul ligger i moduler/<id>.js og kaller Bilspill.modul(id, { css, html, start }).
+// Bytte av modul laster siden på nytt, så hver modul starter rent (ingen gamle lyder, timere eller lyttere).
+const Bilspill = {
+  moduler: {},
+  modul(id, m) { this.moduler[id] = m; },
+  gaaTil(id) { location.hash = id || 'meny'; location.reload(); },
+};
+const MODULER = [
+  { id: 'fabrikk',  navn: 'Bilfabrikk',    bg: '#F0EEFF', kant: '#9B8FE8', skygge: '#6254c4', burst: ['⚙️','🔩','✨','⚙️','🔩','✨'] },
+  { id: 'vask',     navn: 'Bilvask',       bg: '#D6F0FF', kant: '#5BB8F5', skygge: '#1a7bbf', burst: ['🫧','💧','🫧','💧','🫧','✨'] },
+  { id: 'verksted', navn: 'Verksted',      bg: '#EEF1F5', kant: '#A7B0BC', skygge: '#5a6476', burst: ['🔧','🔩','🛞','🔧','🔩','✨'] },
+  { id: 'lakk',     navn: 'Lakkering',     bg: '#FFE8F0', kant: '#F5A0C0', skygge: '#c4507a', burst: ['🎨','🌈','⭐','❤️','🎨','✨'] },
+  { id: 'kjoretur', navn: 'Kjøretur',      bg: '#E8F8E8', kant: '#70C870', skygge: '#3a8a3a', burst: ['🚒','🚌','🚓','🚜','💨','✨'] },
+  { id: 'bygg',     navn: 'Byggeplassen',  bg: '#FFF4CC', kant: '#F5C842', skygge: '#b8860b', burst: ['🪨','🚧','🪨','🚧','💪','✨'] },
+  { id: 'bensin',   navn: 'Bensinstasjon', bg: '#FFE9E6', kant: '#F5928A', skygge: '#c4453b', burst: ['⛽','⚡','🪙','⛽','⚡','✨'] },
+];
+
+const HJEM = `<svg viewBox="0 0 100 100"><path d="M14 48 L50 16 L86 48" stroke="#1f5c4a" stroke-width="10" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M24 44 L24 86 L76 86 L76 44" fill="#1f5c4a"/><rect x="42" y="60" width="16" height="26" fill="#fff"/></svg>`;
+const PIL = `<svg viewBox="0 0 100 100" style="width:20px;height:20px"><path d="M62 18 L30 50 L62 82" stroke="#1f5c4a" stroke-width="13" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+function mini(k, farge) {
+  const bl = (k.detaljer || '').replace(/class="blink"/g, '');
+  return `<svg viewBox="0 -30 400 230">${k.deler.map(d => `<path d="${d.d}" fill="${d.fill || farge || k.farger[0]}"/>`).join('')}
+    ${tegnLakk(k)}${bl}${tegnMerker(k)}${k.hjul.map(h => hjulMarkup(h, k)).join('')}</svg>`;
+}
+const finnK = n => KJORETOY.find(k => k.navn === n);
+const MERKER = {
+  fabrikk: `<svg viewBox="-50 -50 100 100"><circle r="44" fill="#fff"/><g fill="#8e4ec6">${Array.from({length: 8}, (_, i) => `<rect x="-7" y="-36" width="14" height="16" rx="3" transform="rotate(${i * 45})"/>`).join('')}<circle r="26"/></g><circle r="10" fill="#fff"/></svg>`,
+  vask: `<svg viewBox="-50 -50 100 100"><g fill="#fff" stroke="#9fd0ff" stroke-width="4"><circle cx="-12" cy="8" r="24"/><circle cx="18" cy="-14" r="16"/><circle cx="22" cy="22" r="10"/></g></svg>`,
+  verksted: `<svg viewBox="-50 -50 100 100"><circle r="44" fill="#fff"/><g transform="rotate(-40)"><rect x="-6" y="-12" width="12" height="44" rx="5" fill="#4a505c"/><path d="M-17 -12 a17 17 0 1 1 34 0 l-7 5 l0 -12 l-20 0 l0 12 z" fill="#4a505c"/></g></svg>`,
+  lakk: `<svg viewBox="-50 -50 100 100"><circle r="44" fill="#fff"/><rect x="-16" y="-14" width="32" height="46" rx="8" fill="#ff7eb6"/><rect x="-10" y="-26" width="20" height="12" rx="3" fill="#9aa3ae"/><g fill="#ff7eb6"><circle cx="20" cy="-30" r="4"/><circle cx="28" cy="-22" r="3"/><circle cx="26" cy="-36" r="2.5"/></g></svg>`,
+  kjoretur: `<svg viewBox="-50 -50 100 100"><circle r="44" fill="#fff"/><path d="M-14 36 L-4 -34 L4 -34 L14 36 Z" fill="#6b7280"/><g fill="#fff"><rect x="-2" y="-24" width="4" height="10"/><rect x="-2" y="-4" width="4" height="12"/><rect x="-2" y="18" width="4" height="12"/></g></svg>`,
+  bygg: `<svg viewBox="-50 -50 100 100"><circle r="44" fill="#fff"/><path d="M-18 32 L-6 -30 L6 -30 L18 32 Z" fill="#f76b15"/><rect x="-12" y="-6" width="24" height="9" fill="#fff"/><rect x="-26" y="28" width="52" height="8" rx="3" fill="#f76b15"/></svg>`,
+  bensin: `<svg viewBox="-50 -50 100 100"><circle r="44" fill="#fff"/><rect x="-22" y="-30" width="32" height="62" rx="6" fill="#e5484d"/><rect x="-16" y="-22" width="20" height="14" rx="3" fill="#1d2430"/><path d="M10 -12 L24 -4 L24 20" stroke="#2a2a30" stroke-width="6" fill="none" stroke-linecap="round"/></svg>`,
+};
+const FLISBIL = {
+  fabrikk: () => mini(MIN_BIL || lagKjoretoy({ kar: 4, hjul: 3, topp: 3, farge: 2 })),
+  vask: () => mini(finnK('bil')),
+  verksted: () => mini(finnK('traktor')),
+  lakk: () => mini(finnK('bil'), '#cfd5dd'),
+  kjoretur: () => mini(finnK('brannbil')),
+  bygg: () => mini(finnK('gravemaskin')),
+  bensin: () => mini(finnK('buss')),
+};
+
+function visMeny() {
+  const tittel = 'Bilspill'.split('').map((c, i) => `<span style="animation-delay:${i * .12}s">${c}</span>`).join('');
+  document.body.insertAdjacentHTML('beforeend', `<div class="meny">
+    <div class="sol"></div><div class="sky s1"></div><div class="sky s2"></div><div class="sky s3"></div>
+    <div class="topp"><h1 class="tittel">${tittel}</h1></div>
+    <div class="fliser">${MODULER.map((m, i) => `<button class="flis" data-id="${m.id}" style="--bg:${m.bg};--kant:${m.kant};--skygge:${m.skygge};animation-delay:${i * .06}s" aria-label="${m.navn}">
+        <div class="bakke"></div>
+        <div class="scene-mini"><div class="bil" style="animation-delay:${-i * .4}s">${FLISBIL[m.id]()}</div></div>
+        <div class="merke" style="animation-delay:${i * .45}s">${MERKER[m.id]}</div>
+        <div class="navn">${m.navn}</div>
+      </button>`).join('')}</div>
+    <div class="vei" id="vei"></div>
+  </div>`);
+  document.querySelectorAll('.flis').forEach(b => {
+    let start = null;
+    b.addEventListener('pointerdown', e => { start = [e.clientX, e.clientY]; Lyd.start(); });
+    b.addEventListener('pointerup', e => {
+      if (!start || Math.hypot(e.clientX - start[0], e.clientY - start[1]) > 12) return;
+      start = null;
+      const m = MODULER.find(x => x.id === b.dataset.id);
+      b.classList.add('trykket'); jingle();
+      m.burst.forEach((em, i) => {
+        const a = i / m.burst.length * Math.PI * 2, sp = document.createElement('span');
+        sp.className = 'partikkel'; sp.textContent = em;
+        sp.style.setProperty('--tx', Math.cos(a) * 95 + 'px'); sp.style.setProperty('--ty', Math.sin(a) * 80 + 'px');
+        b.appendChild(sp);
+      });
+      setTimeout(() => Bilspill.gaaTil(b.dataset.id), 560);
+    });
+  });
+  // Ut-knapp når Bilspill åpnes fra Lelulu: index.html?retur=/
+  const retur = new URLSearchParams(location.search).get('retur');
+  if (retur) {
+    const a = document.createElement('a'); a.className = 'pille'; a.href = retur; a.innerHTML = `${PIL}Lelulu`;
+    document.body.appendChild(a);
+  }
+  // Biler som kjører forbi på veien. Trykk på en for å høre den.
+  const vei = document.getElementById('vei');
+  const kandidater = KJORETOY.filter(k => k.navn !== 'gravemaskin');
+  function sendBil() {
+    const k = MIN_BIL && Math.random() < .35 ? MIN_BIL : kandidater[Math.floor(Math.random() * kandidater.length)];
+    const el = document.createElement('div'); el.className = 'forbi';
+    el.innerHTML = mini(k, k.farger[Math.floor(Math.random() * k.farger.length)]);
+    vei.appendChild(el);
+    const bredde = el.getBoundingClientRect().width, W = innerWidth, tid = 6000 + Math.random() * 3000;
+    el.animate([{ transform: `translateX(${-bredde - 20}px)` }, { transform: `translateX(${W + 20}px)` }], { duration: tid, easing: 'linear' }).onfinish = () => el.remove();
+    el.addEventListener('pointerdown', e => { e.stopPropagation(); Lyd.start(); (LYDER[k.lyd] || tut)(); el.classList.remove('hopp'); void el.offsetWidth; el.classList.add('hopp'); });
+    setTimeout(sendBil, 2600 + Math.random() * 2600);
+  }
+  setTimeout(sendBil, 600);
+}
+
+function startModul(id) {
+  const s = document.createElement('script');
+  s.src = `moduler/${id}.js`;
+  s.onload = () => {
+    const m = Bilspill.moduler[id];
+    const st = document.createElement('style'); st.textContent = m.css; document.head.appendChild(st);
+    document.body.insertAdjacentHTML('beforeend', m.html);
+    const h = document.createElement('button'); h.className = 'pille'; h.innerHTML = `${PIL}${HJEM}`; h.setAttribute('aria-label', 'Til menyen');
+    h.addEventListener('pointerdown', e => { e.stopPropagation(); e.preventDefault(); Bilspill.gaaTil('meny'); });
+    document.body.appendChild(h);
+    m.start();
+  };
+  s.onerror = () => visMeny();
+  document.body.appendChild(s);
+}
+
+const id = location.hash.slice(1);
+if (MODULER.some(m => m.id === id) || id === 'katalog') startModul(id); else visMeny();
+window.addEventListener('hashchange', () => location.reload());
+</script>
+</body>
+</html>
