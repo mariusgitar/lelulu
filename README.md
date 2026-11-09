@@ -1,6 +1,6 @@
 # Lelulu 🌿
 
-Lekeplass for lulu — en PWA-spillapp for barn 3–5 år.
+Lekeplass for lulu — en PWA-spillapp for barn 3–5 år. 
 
 ## Kom i gang
 
