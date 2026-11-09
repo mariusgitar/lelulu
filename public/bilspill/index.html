@@ -149,9 +149,12 @@ function visMeny() {
     });
   });
   // Ut-knapp når Bilspill åpnes fra Lelulu: index.html?retur=/
-  const retur = new URLSearchParams(location.search).get('retur');
-  if (retur) {
-    const a = document.createElement('a'); a.className = 'pille'; a.href = retur; a.innerHTML = `${PIL}Lelulu`;
+  // Tilbake til Lelulu: enten via ?retur=/ (egen side) eller ?lelulu (inne i en iframe i Lelulu)
+  const param = new URLSearchParams(location.search);
+  if (param.has('retur') || param.has('lelulu')) {
+    const a = document.createElement('a'); a.className = 'pille'; a.innerHTML = `${PIL}Lelulu`;
+    if (param.has('lelulu')) a.addEventListener('click', e => { e.preventDefault(); window.parent.postMessage({ type: 'bilspill-lukk' }, location.origin); });
+    else a.href = param.get('retur');
     document.body.appendChild(a);
   }
   // Biler som kjører forbi på veien. Trykk på en for å høre den.
