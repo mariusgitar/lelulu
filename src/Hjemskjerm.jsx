@@ -23,6 +23,8 @@ const ALLE_SPILL = [
     label: "Sorter dyrene",    sublabel: "Vann, land eller luft?",  burst: ["🐟","🦁","🦉","🦀","🐘","🦜"] },
   { id: "dyreminne",       emoji: "🎵", bg: "#F8F0FF", border: "#C090E8", shadow: "#8040b8",
     label: "Dyreminne",        sublabel: "Husk rekkefølgen!",       burst: ["🐄","🐶","🐱","🦆","🎵","🔊"] },
+  { id: "bilspill", emoji: "🚗", bg: "#FFE9E6", border: "#F5928A", shadow: "#c4453b",
+  label: "Bilspill", sublabel: "Bygg, vask og kjør!", burst: ["🚗","🚒","🚜","🚌","🛞","✨"] },
 ];
 
 function SpillKort({ spill, onOpen }) {
