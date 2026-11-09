@@ -11,6 +11,7 @@ import FinnForskjellen from "./spill/finnforskjellen/FinnForskjellen.jsx";
 import Dinodetektiven from "./spill/dinodetektiven/Dinodetektiven.jsx";
 import Onboarding from "./foreldre/Onboarding.jsx";
 import ForeldrePanelWrapper, { saveAktiverte } from "./foreldre/ForeldrePanel.jsx";
+import Bilspill from "./spill/Bilspill.jsx";
 import { stoppLyd } from "./felles/speak.js";
 
 const SOL_KLIKK_GRENSE = 5;
@@ -83,6 +84,7 @@ export default function App() {
   if (skjerm === "silhuett")        return <Silhuett        onBack={tilbake} onSolTrykk={trykkSol} />;
   if (skjerm === "finnforskjellen") return <FinnForskjellen onBack={tilbake} onSolTrykk={trykkSol} />;
   if (skjerm === "dinodetektiven")  return <Dinodetektiven  onBack={tilbake} onSolTrykk={trykkSol} />;
+  if (skjerm === "bilspill")        return <Bilspill        onBack={tilbake} />;
 
   return (
     <Hjemskjerm
